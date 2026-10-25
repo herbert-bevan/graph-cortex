@@ -385,15 +385,12 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(GuestAuthMiddleware)
 
-# Mount FastMCP SSE application
-mcp_sse_app = mcp.sse_app()
-app.mount("/", mcp_sse_app)
-
 
 # ---------------------------------------------------------------------------
 # Web Portal UI (HTML) & APIs
 # ---------------------------------------------------------------------------
 
+@app.get("/", response_class=HTMLResponse)
 @app.get("/login", response_class=HTMLResponse)
 @app.get("/portal", response_class=HTMLResponse)
 async def portal_page(request: Request):
@@ -683,3 +680,9 @@ async def api_trigger_cleanup(request: Request):
     """Scheduled task endpoint to purge expired guest accounts."""
     deleted_count = cleanup_expired_guests()
     return JSONResponse({"ok": True, "deleted_guests": deleted_count})
+
+
+# Mount FastMCP SSE transport after all explicit Web & API routes
+mcp_sse_app = mcp.sse_app()
+app.mount("/", mcp_sse_app)
+
