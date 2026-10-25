@@ -34,6 +34,26 @@ def get_falkordb_connection() -> FalkorDB:
             )
         except Exception as exc:
             err_str = str(exc).lower()
+            if "without any password configured" in err_str:
+                logger.warning(
+                    "FalkorDB instance has no password configured on default user. "
+                    "Retrying connection without password (password=None, username=None)..."
+                )
+                try:
+                    _falkordb_client = FalkorDB(
+                        host=settings.FALKORDB_HOST,
+                        port=settings.FALKORDB_PORT,
+                        username=None,
+                        password=None,
+                        ssl=settings.FALKORDB_SSL,
+                        socket_timeout=15,
+                        socket_connect_timeout=15,
+                    )
+                    logger.info("FalkorDB connection successfully established without password.")
+                    return _falkordb_client
+                except Exception as inner_exc:
+                    raise DatabaseUnavailable(f"Failed to initialize FalkorDB client: {str(inner_exc)}") from inner_exc
+
             if settings.FALKORDB_USERNAME and ("invalid username-password pair" in err_str or "wrongpass" in err_str):
                 logger.warning(
                     f"FalkorDB authentication failed with username='{settings.FALKORDB_USERNAME}'. "

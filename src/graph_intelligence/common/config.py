@@ -40,7 +40,10 @@ class Settings(BaseSettings):
         """Safely extract plain password string for adapter without repr leakage."""
         if self.FALKORDB_PASSWORD is None:
             return None
-        return self.FALKORDB_PASSWORD.get_secret_value()
+        val = self.FALKORDB_PASSWORD.get_secret_value()
+        if not val or not val.strip():
+            return None
+        return val
 
 
 _settings_instance: Optional[Settings] = None
