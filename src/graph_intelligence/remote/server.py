@@ -20,7 +20,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from contextlib import asynccontextmanager
 from graph_intelligence.common.config import get_settings
+from graph_intelligence.common.falkordb_client import GraphStore
 from graph_intelligence.common.logging_setup import get_logger
 from graph_intelligence.company_brain.service import CompanyBrainService
 from graph_intelligence.memory.service import MemoryService
@@ -30,9 +32,30 @@ from graph_intelligence.remote.auth import (
     validate_guest_token,
     record_session_operation,
     cleanup_expired_guests,
+    init_db,
 )
 
 logger = get_logger("remote_server")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Automatic zero-touch database provisioning on server boot."""
+    try:
+        init_db()
+        logger.info("GraphCortex PostgreSQL guest authentication tables verified.")
+    except Exception as exc:
+        logger.warning(f"PostgreSQL initialization note: {exc}")
+
+    try:
+        store = GraphStore()
+        store.ensure_indexes()
+        logger.info("GraphCortex FalkorDB schema indexes verified.")
+    except Exception as exc:
+        logger.warning(f"FalkorDB initialization note: {exc}")
+
+    yield
+
 
 # Context variable to hold the active authenticated guest ID for the current request
 active_guest_context: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
@@ -297,6 +320,7 @@ app = FastAPI(
     title="GraphCortex Demo Portal",
     description="GraphCortex Model Context Protocol (MCP) Remote Service with Guest Authentication & FalkorDB Knowledge Graph",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

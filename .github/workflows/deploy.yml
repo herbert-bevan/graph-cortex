@@ -42,7 +42,7 @@ jobs:
           script: |
             set -e
             echo "[INFO] Navigating to application directory..."
-            cd /opt/graph-mcp
+            cd /opt/graph-cortex
 
             echo "[INFO] Pulling latest changes from main..."
             git pull origin main
@@ -50,12 +50,7 @@ jobs:
             echo "[INFO] Rebuilding and restarting containers..."
             docker compose up -d --build
 
-            echo "[INFO] Waiting for services to become healthy..."
-            sleep 5
-
-            echo "[INFO] Ensuring FalkorDB indexes and demo seed are provisioned..."
-            docker compose exec -T app python scripts/seed_demo.py || true
-
             echo "[INFO] Verifying deployment health..."
             docker compose ps
+            echo "[SUCCESS] Deployment completed successfully!"
             echo "[SUCCESS] Deployment completed successfully!"
