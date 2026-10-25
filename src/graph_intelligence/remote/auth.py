@@ -35,7 +35,9 @@ if _USE_POSTGRES:
 
 if not _USE_POSTGRES:
     import sqlite3
-    SQLITE_PATH = os.path.join(os.path.dirname(__file__), "guest_auth.db")
+    SQLITE_DIR = os.getenv("SQLITE_DIR", os.path.dirname(__file__))
+    os.makedirs(SQLITE_DIR, exist_ok=True)
+    SQLITE_PATH = os.path.join(SQLITE_DIR, "guest_auth.db")
 
 
 def _get_connection():

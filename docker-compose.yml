@@ -14,9 +14,12 @@ services:
       - FALKORDB_PASSWORD=${FALKORDB_PASSWORD}
       - FALKORDB_GRAPH=${FALKORDB_GRAPH:-graphcortex}
       - DATABASE_URL=${DATABASE_URL}
+      - SQLITE_DIR=/app/data
       - MAX_CONCURRENT_GUESTS=${MAX_CONCURRENT_GUESTS:-50}
       - GUEST_SESSION_LIMIT=${GUEST_SESSION_LIMIT:-10}
       - GUEST_TTL_HOURS=${GUEST_TTL_HOURS:-24}
+    volumes:
+      - guest_db_data:/app/data
     deploy:
       resources:
         limits:
@@ -37,3 +40,4 @@ services:
 
 volumes:
   falkordb_data:
+  guest_db_data:
