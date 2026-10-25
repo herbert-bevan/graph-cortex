@@ -560,6 +560,26 @@ PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
       margin-top: 1.25rem;
       flex-wrap: wrap;
     }
+    .btn-dice {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #c084fc;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-dice:hover {
+      background: rgba(139, 92, 246, 0.3);
+      border-color: #c084fc;
+      color: #fff;
+      transform: translateY(-1px);
+    }
     .input-group {
       flex: 1;
       min-width: 240px;
@@ -891,8 +911,13 @@ PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
 
       <div class="input-row">
         <div class="input-group">
-          <label class="field-label" for="nickname">Developer / Guest Nickname</label>
-          <input type="text" id="nickname" placeholder="e.g. Neo, Alex, Ada" value="GuestDeveloper">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="field-label" for="nickname" style="margin-bottom: 0;">Slayer Nickname</label>
+            <button type="button" class="btn-dice" onclick="rollDemonSlayer()" title="Summon a random Demon Slayer character">
+              🎲 Summon Demon Slayer
+            </button>
+          </div>
+          <input type="text" id="nickname" placeholder="Zenitsu (Only Demon Slayer Character names are allowed)">
         </div>
         <button class="btn-generate" id="generateBtn" onclick="generateToken()">
           <span>⚡ Generate 1-Click Agent Token</span>
@@ -1135,6 +1160,38 @@ PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
     let currentTab = 'claude';
     const baseUrl = '{{base_url}}';
 
+    const demonSlayers = [
+      "Zenitsu Agatsuma ⚡",
+      "Tanjiro Kamado 🌊",
+      "Nezuko Kamado 🎋",
+      "Inosuke Hashibira 🐗",
+      "Kyojuro Rengoku 🔥",
+      "Giyu Tomioka 🌊",
+      "Shinobu Kocho 🦋",
+      "Tengen Uzui ✨",
+      "Muichiro Tokito 🌫️",
+      "Mitsuri Kanroji 💖",
+      "Sanemi Shinazugawa 🌪️",
+      "Gyomei Himejima 🪨",
+      "Obanai Iguro 🐍",
+      "Kanao Tsuyuri 🪙",
+      "Genya Shinazugawa 💥",
+      "Yoriichi Tsugikuni ☀️",
+      "Muzan Kibutsuji 🎩",
+      "Akaza ❄️",
+      "Kokushibo 👁️",
+      "Doma 🪭"
+    ];
+
+    function rollDemonSlayer() {
+      const input = document.getElementById('nickname');
+      const randomIndex = Math.floor(Math.random() * demonSlayers.length);
+      input.value = demonSlayers[randomIndex];
+      input.style.borderColor = '#c084fc';
+      input.focus();
+      setTimeout(() => { input.style.borderColor = ''; }, 600);
+    }
+
     function getConfigs(token) {
       const sseUrl = baseUrl + '/sse';
       return {
@@ -1185,7 +1242,7 @@ PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
 
     async function generateToken() {
       const btn = document.getElementById('generateBtn');
-      const nickname = document.getElementById('nickname').value.trim() || 'GuestDeveloper';
+      const nickname = document.getElementById('nickname').value.trim() || 'Zenitsu Agatsuma ⚡';
       btn.innerHTML = '<span>⚡ Provisioning Sandbox...</span>';
       btn.disabled = true;
 
