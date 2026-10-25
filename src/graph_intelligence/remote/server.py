@@ -77,7 +77,8 @@ async def lifespan(app: FastAPI):
 
     cleanup_task = asyncio.create_task(_daily_cleanup_worker())
     try:
-        yield
+        async with mcp.session_manager.run():
+            yield
     finally:
         cleanup_task.cancel()
 
@@ -393,8 +394,8 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
-        # Protect /sse and /messages routes
-        if path.startswith("/sse") or path.startswith("/messages"):
+        # Protect /sse, /messages, and /mcp routes
+        if path.startswith("/sse") or path.startswith("/messages") or path.startswith("/mcp"):
             forwarded = request.headers.get("x-forwarded-for")
             client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
 
@@ -429,7 +430,11 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
 
             # Record session activity only when a real transport session_id is present (e.g. on /messages/)
             # This prevents /sse connect and /messages/ from being counted twice for a single MCP connection
-            sess_id = request.headers.get("X-Session-ID") or request.query_params.get("session_id")
+            sess_id = (
+                request.headers.get("mcp-session-id")
+                or request.headers.get("X-Session-ID")
+                or request.query_params.get("session_id")
+            )
             if sess_id:
                 try:
                     record_session_operation(guest_id, sess_id, path, ip_address=client_ip)
@@ -442,6 +447,13 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
 
             try:
                 response = await call_next(request)
+                # If this was an initial /mcp initialize request, record session from response header
+                if not sess_id and response.headers.get("mcp-session-id"):
+                    new_sess = response.headers.get("mcp-session-id")
+                    try:
+                        record_session_operation(guest_id, new_sess, path, ip_address=client_ip)
+                    except Exception as e:
+                        logger.warning(f"Failed to record session operation for guest={guest_id}: {e}")
                 return response
             finally:
                 active_guest_context.reset(token_reset)
@@ -1282,11 +1294,13 @@ PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
           }
         },
         antigravity: {
-          "server": "graph-cortex",
-          "transport": "sse",
-          "url": sseUrl,
-          "headers": {
-            "Authorization": "Bearer " + token
+          "mcpServers": {
+            "graph-cortex": {
+              "url": baseUrl + "/mcp",
+              "headers": {
+                "Authorization": "Bearer " + token
+              }
+            }
           }
         }
       };
@@ -1488,7 +1502,13 @@ async def api_trigger_cleanup(request: Request, days: int = 2):
     return JSONResponse({"ok": True, **stats})
 
 
-# Mount FastMCP SSE transport after all explicit Web & API routes
+# Mount FastMCP Transports:
+# 1. Streamable HTTP transport (for Antigravity and modern MCP clients at /mcp)
+mcp_streamable_app = mcp.streamable_http_app()
+for r in mcp_streamable_app.routes:
+    app.routes.append(r)
+
+# 2. SSE transport (for Claude Desktop, Cursor, and SSE clients at /sse and /messages)
 mcp_sse_app = mcp.sse_app()
 app.mount("/", mcp_sse_app)
 
