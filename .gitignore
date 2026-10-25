@@ -9,6 +9,5 @@ htmlcov/
 *.log
 *.db
 .vscode/
-.agent/plans/
 NOTES.md
 PROGRESS.md

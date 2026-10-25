@@ -646,11 +646,44 @@ You can also run both FalkorDB and the Python MCP services together using Docker
 
 ```bash
 # Build the application image
-docker build -t falkordb-graph-intelligence .
+docker build -t graphcortex-mcp-server .
 
 # Start containers
 docker compose up -d
 ```
+
+---
+
+### Option D: Remote Production VPS Deployment (Host Nginx + GitHub CI/CD)
+
+For hosting a 24/7 public MCP endpoint for Claude Desktop, Cursor, and Antigravity over HTTPS with guest sandboxing:
+
+1. **Repository Deployment Path on VPS**:
+   ```bash
+   mkdir -p /opt/graph-cortex
+   cd /opt/graph-cortex
+   git clone https://github.com/herbert-bevan/graph-cortex.git
+   cd /opt/graph-cortex/graph-cortex
+   ```
+
+2. **Configure Production `.env`**:
+   ```bash
+   cd /opt/graph-cortex/graph-cortex
+   cp .env.example .env
+   # Set your DOMAIN_NAME, FALKORDB_PASSWORD, and DATABASE_URL
+   ```
+
+3. **Launch the Container Stack**:
+   ```bash
+   cd /opt/graph-cortex/graph-cortex
+   docker compose up -d --build
+   ```
+
+4. **Nginx Reverse Proxy & SSL**:
+   Route traffic from your existing Nginx web server to `127.0.0.1:8000` with `proxy_buffering off;` using [`scripts/nginx_graph_cortex.conf`](scripts/nginx_graph_cortex.conf).
+
+> [!TIP]
+> For the complete step-by-step VPS walkthrough including Nginx reverse proxy configuration, Certbot SSL, Cloudflare protection, and zero-touch GitHub Actions CI/CD automation, refer to **[.agent/plans/VPS_AND_CICD_SETUP_GUIDE.md](.agent/plans/VPS_AND_CICD_SETUP_GUIDE.md)**.
 
 ---
 
