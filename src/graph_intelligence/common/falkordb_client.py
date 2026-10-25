@@ -33,6 +33,26 @@ def get_falkordb_connection() -> FalkorDB:
                 socket_connect_timeout=15,
             )
         except Exception as exc:
+            err_str = str(exc).lower()
+            if settings.FALKORDB_USERNAME and ("invalid username-password pair" in err_str or "wrongpass" in err_str):
+                logger.warning(
+                    f"FalkorDB authentication failed with username='{settings.FALKORDB_USERNAME}'. "
+                    "Falling back to default user (username=None) for standalone Redis/FalkorDB with --requirepass..."
+                )
+                try:
+                    _falkordb_client = FalkorDB(
+                        host=settings.FALKORDB_HOST,
+                        port=settings.FALKORDB_PORT,
+                        username=None,
+                        password=pwd,
+                        ssl=settings.FALKORDB_SSL,
+                        socket_timeout=15,
+                        socket_connect_timeout=15,
+                    )
+                    logger.info("FalkorDB connection successfully established using default user.")
+                    return _falkordb_client
+                except Exception as inner_exc:
+                    raise DatabaseUnavailable(f"Failed to initialize FalkorDB client: {str(inner_exc)}") from inner_exc
             raise DatabaseUnavailable(f"Failed to initialize FalkorDB client: {str(exc)}") from exc
     return _falkordb_client
 

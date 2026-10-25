@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     FALKORDB_HOST: str = Field(default="localhost")
     FALKORDB_PORT: int = Field(default=6379)
-    FALKORDB_USERNAME: Optional[str] = Field(default="falkordb")
+    FALKORDB_USERNAME: Optional[str] = Field(default=None)
     FALKORDB_PASSWORD: Optional[SecretStr] = Field(default=None)
     FALKORDB_SSL: bool = Field(default=False)
     FALKORDB_GRAPH: str = Field(default="graphcortex_demo")
