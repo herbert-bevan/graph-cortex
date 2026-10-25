@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "graph-intelligence"
+name = "graphcortex"
 version = "0.1.0"
-description = "FalkorDB Graph Intelligence Platform with 3 MCP Servers"
+description = "GraphCortex: Autonomous Knowledge Graph Memory & Architectural Reasoning Platform"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -13,6 +13,9 @@ dependencies = [
     "falkordb>=1.8.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "psycopg[binary]>=3.1.0",
 ]
 
 [project.optional-dependencies]

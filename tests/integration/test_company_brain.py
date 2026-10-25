@@ -19,7 +19,7 @@ def brain_service():
 
 
 def test_answer_company_question_acceptance(brain_service):
-    q = "Who owns PaymentService, which team are they on, why did AtlasPay choose idempotency keys, and which document supports that decision?"
+    q = "Who owns PaymentService, which team are they on, why did GraphCortex choose idempotency keys, and which document supports that decision?"
     res = brain_service.answer_company_question(q)
 
     assert res["ok"] is True

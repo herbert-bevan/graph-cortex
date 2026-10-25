@@ -1,4 +1,4 @@
-"""atlaspay-memory MCP server (Track 2 - Critical)."""
+"""graphcortex-memory MCP server."""
 
 from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
@@ -38,7 +38,7 @@ UPDATE
 - Memory is private to the configured user. Never ask for or pass another user's identity.
 """
 
-mcp = FastMCP("atlaspay-memory", instructions=SERVER_INSTRUCTIONS)
+mcp = FastMCP("graphcortex-memory", instructions=SERVER_INSTRUCTIONS)
 
 
 def _get_service() -> MemoryService:

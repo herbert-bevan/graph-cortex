@@ -1,4 +1,4 @@
-"""Integration tests for Track 2 persistent session memory."""
+"""Integration tests for persistent session memory."""
 
 import pytest
 from graph_intelligence.common.config import get_settings
@@ -22,7 +22,7 @@ def setup_test_graph():
         pytest.skip(f"FalkorDB instance not reachable: {exc}")
 
 
-def test_track2_full_memory_lifecycle(setup_test_graph):
+def test_full_memory_lifecycle(setup_test_graph):
     test_graph = setup_test_graph
     user_a = "test-user-alice"
     user_b = "test-user-bob"

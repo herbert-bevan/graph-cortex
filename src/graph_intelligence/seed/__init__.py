@@ -1,1 +1,1 @@
-"""Seed data and utilities for AtlasPay demo."""
+"""Seed data and utilities for GraphCortex knowledge graph."""

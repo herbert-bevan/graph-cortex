@@ -1,4 +1,4 @@
-"""Idempotent seed loader for AtlasPay company graph."""
+"""Idempotent seed loader for GraphCortex enterprise knowledge graph."""
 
 import json
 from pathlib import Path

@@ -129,7 +129,7 @@ async def test_brain_server_stdio(ensure_db):
             assert "ingest_company_records" in tool_names
 
             # Test answer_company_question
-            q = "Who owns PaymentService, which team are they on, why did AtlasPay choose idempotency keys, and which document supports that decision?"
+            q = "Who owns PaymentService, which team are they on, why did GraphCortex choose idempotency keys, and which document supports that decision?"
             call_res = await session.call_tool("answer_company_question", arguments={"question": q})
             assert not call_res.isError
             content = call_res.content[0].text

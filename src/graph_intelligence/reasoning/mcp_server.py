@@ -1,4 +1,4 @@
-"""atlaspay-reasoning MCP server (Track 1)."""
+"""graphcortex-reasoning MCP server."""
 
 from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
@@ -7,14 +7,14 @@ from graph_intelligence.common.logging_setup import log_operation
 from graph_intelligence.reasoning.service import ReasoningService
 
 SERVER_INSTRUCTIONS = """
-AtlasPay Graph Reasoning Server.
+GraphCortex Reasoning Server.
 Provides structural graph queries for service dependencies, blast-radius change impact analysis,
-and shortest connection paths across AtlasPay microservices, features, decisions, and incidents.
+and shortest connection paths across microservices, features, decisions, and incidents.
 Use this server when exploring system architecture, evaluating the impact of code or configuration changes,
 or tracing relationships between services.
 """
 
-mcp = FastMCP("atlaspay-reasoning", instructions=SERVER_INSTRUCTIONS)
+mcp = FastMCP("graphcortex-reasoning", instructions=SERVER_INSTRUCTIONS)
 _service = ReasoningService()
 
 
@@ -26,7 +26,7 @@ def find_service_dependencies(
     limit: int = Field(25, description="Maximum number of connections to return (1 to 25)"),
 ) -> Dict[str, Any]:
     """
-    Find upstream dependencies or downstream dependents of a service in the AtlasPay graph.
+    Find upstream dependencies or downstream dependents of a service in the architectural graph.
     Call this tool when analyzing which services a microservice depends on, or which services rely on it.
     """
     with log_operation("find_service_dependencies"):
@@ -65,7 +65,7 @@ def find_graph_path(
     max_hops: int = Field(4, description="Maximum number of relationship hops (1 to 6)"),
 ) -> Dict[str, Any]:
     """
-    Find the shortest connection path between any two entities in the AtlasPay graph.
+    Find the shortest connection path between any two entities in the architectural graph.
     Call this tool when you need to understand how two components are connected across the architecture.
     """
     with log_operation("find_graph_path"):

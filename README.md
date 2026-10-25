@@ -1,4 +1,4 @@
-# FalkorDB Graph Intelligence Platform & Autonomous Memory Engine
+# GraphCortex: Autonomous Knowledge Graph Memory & Reasoning Engine for AI Agents
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-Cloud-orange.svg)](https://www.falkordb.com/)
@@ -23,9 +23,9 @@ Built specifically for advanced agentic AI environments (such as **Google Antigr
    - [Relationship Taxonomy & Semantics](#relationship-taxonomy--semantics)
    - [Indexing & Schema Integrity in FalkorDB](#indexing--schema-integrity-in-falkordb)
 4. [Deep Dive: The Three MCP Servers](#4-deep-dive-the-three-mcp-servers)
-   - [Track 1: atlaspay-reasoning](#track-1-atlaspay-reasoning)
-   - [Track 2: atlaspay-memory (The Critical Track)](#track-2-atlaspay-memory-the-critical-track)
-   - [Track 3: atlaspay-brain](#track-3-atlaspay-brain)
+   - [Architectural Reasoning Engine: graphcortex-reasoning](#architectural-reasoning-engine-graphcortex-reasoning)
+   - [Autonomous Memory Engine: graphcortex-memory](#autonomous-memory-engine-graphcortex-memory)
+   - [Corporate Knowledge Brain: graphcortex-brain](#corporate-knowledge-brain-graphcortex-brain)
 5. [Shared Domain Core & Security Boundaries](#5-shared-domain-core--security-boundaries)
 6. [FalkorDB Field Learnings & Opportunities for Improvement](#6-falkordb-field-learnings--opportunities-for-improvement)
 7. [Verification & Test Suite (33/33 Passing)](#7-verification--test-suite-3333-passing)
@@ -66,9 +66,9 @@ flowchart TD
   end
 
   subgraph MCP_Layer["Model Context Protocol (stdio transport)"]
-    Agent -->|JSON-RPC stdio| M1["atlaspay-reasoning<br/>(4 Tools)"]
-    Agent -->|JSON-RPC stdio| M2["atlaspay-memory<br/>(5 Tools)"]
-    Agent -->|JSON-RPC stdio| M3["atlaspay-brain<br/>(5 Tools)"]
+    Agent -->|JSON-RPC stdio| M1["graphcortex-reasoning<br/>(4 Tools)"]
+    Agent -->|JSON-RPC stdio| M2["graphcortex-memory<br/>(5 Tools)"]
+    Agent -->|JSON-RPC stdio| M3["graphcortex-brain<br/>(5 Tools)"]
   end
 
   subgraph Core_Layer["Shared Python Domain Core (src/graph_intelligence/common/)"]
@@ -155,7 +155,7 @@ All nodes in the graph share baseline metadata properties:
 #### 1. Company Knowledge Nodes
 | Label | Key Properties | Description & Example |
 |---|---|---|
-| `Company` | `name`, `domain`, `founded` | Top-level enterprise root (e.g., *AtlasPay*). |
+| `Company` | `name`, `domain`, `founded` | Top-level enterprise root (e.g., *GraphCortex*). |
 | `Team` | `name`, `mission`, `slack_channel` | Engineering or product teams (e.g., *Payments*, *Core Banking*). |
 | `Person` | `name`, `role`, `email`, `timezone` | Engineers, architects, and owners (e.g., *Maya Chen, Staff Engineer*). |
 | `Project` | `name`, `status`, `priority`, `description` | High-level initiatives (e.g., *Payment Reliability*, *status="in_progress"*). |
@@ -218,7 +218,7 @@ To achieve sub-millisecond query latency across thousands of nodes and traversal
 
 ## 4. Deep Dive: The Three MCP Servers
 
-### Track 1: `atlaspay-reasoning`
+### Architectural Reasoning Engine: `graphcortex-reasoning`
 Focuses on blast radius calculation, transitive dependencies, and graph connectivity.
 
 #### Tools
@@ -239,7 +239,7 @@ Focuses on blast radius calculation, transitive dependencies, and graph connecti
 
 ---
 
-### Track 2: `atlaspay-memory` (The Critical Track)
+### Autonomous Memory Engine: `graphcortex-memory`
 Implements user-scoped persistent session memory written and retrieved by the LLM.
 
 #### Data Model (`SessionSummary`)
@@ -297,8 +297,8 @@ $$\text{Total Score} = S_{\text{entity}} + S_{\text{project}} + S_{\text{kw\_phr
 
 ---
 
-### Track 3: `atlaspay-brain`
-Deterministic company knowledge search and Q&A over the synthetic **AtlasPay** fintech architecture.
+### Corporate Knowledge Brain: `graphcortex-brain`
+Deterministic company knowledge search and Q&A over the synthetic **GraphCortex** fintech architecture.
 
 #### Tools
 - **`answer_company_question(question, project=None)`**:
@@ -377,7 +377,7 @@ The repository includes a comprehensive, multi-tiered test suite that runs again
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.14.0, pytest-9.1.1, pluggy-1.7.0
-rootdir: C:\Users\HerbertThomas\Documents\HB\Projects\GraphHacks
+rootdir: /path/to/graph-intelligence-platform
 configfile: pyproject.toml
 plugins: anyio-4.15.1
 collected 33 items
@@ -386,7 +386,7 @@ tests/integration/test_company_brain.py::test_answer_company_question_acceptance
 tests/integration/test_company_brain.py::test_get_service_brief PASSED   [  6%]
 tests/integration/test_company_brain.py::test_get_decision_context PASSED [  9%]
 tests/integration/test_company_brain.py::test_unknown_question_reports_gaps PASSED [ 12%]
-tests/integration/test_memory.py::test_track2_full_memory_lifecycle PASSED [ 15%]
+tests/integration/test_memory.py::test_full_memory_lifecycle PASSED [ 15%]
 tests/integration/test_reasoning.py::test_find_service_dependencies PASSED [ 18%]
 tests/integration/test_reasoning.py::test_analyze_change_impact_paymentservice PASSED [ 21%]
 tests/integration/test_reasoning.py::test_find_graph_path PASSED         [ 24%]
@@ -424,20 +424,20 @@ tests/unit/test_validation.py::test_validate_int_range PASSED            [100%]
 ## 8. Live Demo Runbook & Prompt Storyboard
 
 To provide a 100% leak-free, authentic demo where the AI assistant cannot read code files from the local directory:
-1. Open the clean demo workspace created at **`c:\Users\HerbertThomas\Documents\HB\Projects\AtlasPay-Demo`**.
-2. It contains **only** [`.agent/rules/memory-policy.md`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/AtlasPay-Demo/.agent/rules/memory-policy.md) and zero source files.
+1. Open the clean demo workspace created at **`c:\Users\HerbertThomas\Documents\HB\Projects\GraphCortex-Demo`**.
+2. It contains **only** [`.agent/rules/memory-policy.md`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphCortex-Demo/.agent/rules/memory-policy.md) and zero source files.
 3. The MCP servers communicate over stdio to FalkorDB Cloud.
 
-### Step 1: Company Brain (Track 3)
+### Step 1: Corporate Brain (graphcortex-brain)
 ```text
-Who owns PaymentService, which team are they on, why did AtlasPay choose idempotency keys, and which document supports that decision?
+Who owns PaymentService, which team are they on, why did GraphCortex choose idempotency keys, and which document supports that decision?
 ```
 - **Observed Behavior**: Agent calls `answer_company_question`.
 - **Returned Facts**: Maya Chen owns PaymentService (Payments team); ADR-014 was accepted to prevent duplicate charges during timeouts (`INC-PAY-019`); cites document `doc-adr-014` ("ADR-014 Idempotency Keys").
 
 ---
 
-### Step 2: Blast Radius Reasoning (Track 1)
+### Step 2: Blast Radius Reasoning (graphcortex-reasoning)
 ```text
 If PaymentService changes its retry behavior, which services or features could be affected? Show the paths.
 ```
@@ -446,7 +446,7 @@ If PaymentService changes its retry behavior, which services or features could b
 
 ---
 
-### Step 3: Session A — Memory Write (Track 2)
+### Step 3: Session A — Memory Write (graphcortex-memory)
 ```text
 We decided to use three Python MCP services over a shared FalkorDB graph. The memory service saves summaries per user and retrieves them in later sessions by topic. Save a concise summary of this session — the architecture decision, the reason, keywords, and next steps — so I can continue later.
 ```
@@ -506,12 +506,12 @@ docker compose up -d
 
 *(Alternatively, run standalone without compose:)*
 ```bash
-docker run -d --name atlaspay-falkordb -p 6379:6379 -v falkordb-data:/var/lib/falkordb/data falkordb/falkordb:latest
+docker run -d --name graphcortex-falkordb -p 6379:6379 -v falkordb-data:/var/lib/falkordb/data falkordb/falkordb:latest
 ```
 
 Verify that the container is healthy and listening on port `6379`:
 ```bash
-docker ps --filter "name=atlaspay-falkordb"
+docker ps --filter "name=graphcortex-falkordb"
 ```
 
 #### Step 3: Set Up Python Virtual Environment & Dependencies
@@ -554,8 +554,8 @@ FALKORDB_PASSWORD=
 FALKORDB_SSL=false
 
 # Graph Names
-FALKORDB_GRAPH=atlaspay_demo
-FALKORDB_GRAPH_TEST=atlaspay_test
+FALKORDB_GRAPH=graphcortex_demo
+FALKORDB_GRAPH_TEST=graphcortex_test
 
 # Agent & Demo Context
 DEMO_USER_ID=demo-user-herbert
@@ -577,7 +577,7 @@ python scripts/check_connection.py
 ```text
 Connecting to FalkorDB on localhost:6379...
 [OK] Connected successfully to FalkorDB!
-Graph 'atlaspay_demo' is ready.
+Graph 'graphcortex_demo' is ready.
 ```
 
 #### Step 6: Seed Knowledge Graph & Schema
@@ -630,8 +630,8 @@ To connect to a managed FalkorDB Cloud database:
    FALKORDB_USERNAME=falkordb
    FALKORDB_PASSWORD=your-cloud-password
    FALKORDB_SSL=false
-   FALKORDB_GRAPH=atlaspay_demo
-   FALKORDB_GRAPH_TEST=atlaspay_test
+   FALKORDB_GRAPH=graphcortex_demo
+   FALKORDB_GRAPH_TEST=graphcortex_test
    DEMO_USER_ID=demo-user-herbert
    DEFAULT_PROJECT_ID=proj-payment-reliability
    LOG_LEVEL=INFO
@@ -677,7 +677,7 @@ You can run it in two modes:
 
 Run any of the following commands in your terminal from the project root. The Inspector will launch a proxy process and automatically open your default browser to `http://localhost:5173`:
 
-##### 1. Inspect Track 1: `atlaspay-reasoning`
+##### 1. Inspect Reasoning Engine: `graphcortex-reasoning`
 ```bash
 # Windows (PowerShell)
 npx.cmd @modelcontextprotocol/inspector .\.venv\Scripts\python.exe -m graph_intelligence.reasoning.mcp_server
@@ -686,9 +686,9 @@ npx.cmd @modelcontextprotocol/inspector .\.venv\Scripts\python.exe -m graph_inte
 npx @modelcontextprotocol/inspector .venv/bin/python -m graph_intelligence.reasoning.mcp_server
 ```
 
-##### 2. Inspect Track 2: `atlaspay-memory` (The Critical Track)
+##### 2. Inspect Autonomous Memory Engine: `graphcortex-memory`
 > [!NOTE]
-> `atlaspay-memory` isolates user memory using server-side identity injection. When launching via MCP Inspector, supply the test user identity via the `-e` environment flag:
+> `graphcortex-memory` isolates user memory using server-side identity injection. When launching via MCP Inspector, supply the test user identity via the `-e` environment flag:
 
 ```bash
 # Windows (PowerShell)
@@ -698,7 +698,7 @@ npx.cmd @modelcontextprotocol/inspector -e DEMO_USER_ID=demo-user-herbert .\.ven
 npx @modelcontextprotocol/inspector -e DEMO_USER_ID=demo-user-herbert .venv/bin/python -m graph_intelligence.memory.mcp_server
 ```
 
-##### 3. Inspect Track 3: `atlaspay-brain`
+##### 3. Inspect Corporate Knowledge Brain: `graphcortex-brain`
 ```bash
 # Windows (PowerShell)
 npx.cmd @modelcontextprotocol/inspector .\.venv\Scripts\python.exe -m graph_intelligence.company_brain.mcp_server
@@ -729,7 +729,7 @@ npx.cmd @modelcontextprotocol/inspector --cli --method tools/list .\.venv\Script
   "tools": [
     {
       "name": "find_service_dependencies",
-      "description": "Find upstream dependencies or downstream dependents of a service in the AtlasPay graph.",
+      "description": "Find upstream dependencies or downstream dependents of a service in the GraphCortex graph.",
       "inputSchema": { ... }
     },
     {
@@ -781,18 +781,18 @@ Add the following to your Antigravity MCP configuration (`MCP Servers -> Manage 
 ```json
 {
   "mcpServers": {
-    "atlaspay-reasoning": {
+    "graphcortex-reasoning": {
       "command": "/absolute/path/to/falkordb-graph-intelligence/.venv/Scripts/python.exe",
       "args": ["-m", "graph_intelligence.reasoning.mcp_server"]
     },
-    "atlaspay-memory": {
+    "graphcortex-memory": {
       "command": "/absolute/path/to/falkordb-graph-intelligence/.venv/Scripts/python.exe",
       "args": ["-m", "graph_intelligence.memory.mcp_server"],
       "env": {
         "DEMO_USER_ID": "demo-user-herbert"
       }
     },
-    "atlaspay-brain": {
+    "graphcortex-brain": {
       "command": "/absolute/path/to/falkordb-graph-intelligence/.venv/Scripts/python.exe",
       "args": ["-m", "graph_intelligence.company_brain.mcp_server"]
     }
@@ -805,18 +805,18 @@ Add the following to your Antigravity MCP configuration (`MCP Servers -> Manage 
 ```json
 {
   "mcpServers": {
-    "atlaspay-reasoning": {
+    "graphcortex-reasoning": {
       "command": "python",
       "args": ["-m", "graph_intelligence.reasoning.mcp_server"],
       "cwd": "/path/to/falkordb-graph-intelligence"
     },
-    "atlaspay-memory": {
+    "graphcortex-memory": {
       "command": "python",
       "args": ["-m", "graph_intelligence.memory.mcp_server"],
       "cwd": "/path/to/falkordb-graph-intelligence",
       "env": { "DEMO_USER_ID": "demo-user-herbert" }
     },
-    "atlaspay-brain": {
+    "graphcortex-brain": {
       "command": "python",
       "args": ["-m", "graph_intelligence.company_brain.mcp_server"],
       "cwd": "/path/to/falkordb-graph-intelligence"
@@ -831,7 +831,7 @@ Add the following to your Antigravity MCP configuration (`MCP Servers -> Manage 
 
 | Issue | Cause | Fix |
 |---|---|---|
-| `redis.exceptions.ConnectionError: Error 10061 connecting to localhost:6379` | Local FalkorDB container is not running. | Run `docker compose up -d` or `docker start atlaspay-falkordb`. Verify with `docker ps`. |
+| `redis.exceptions.ConnectionError: Error 10061 connecting to localhost:6379` | Local FalkorDB container is not running. | Run `docker compose up -d` or `docker start graphcortex-falkordb`. Verify with `docker ps`. |
 | `Address already in use: 6379` | Existing local Redis or FalkorDB process occupies port 6379. | Stop the existing service (`sudo systemctl stop redis` on Linux or stop via Windows Services / Docker), or map to a different host port in `docker-compose.yml` (e.g. `"6380:6379"` and set `FALKORDB_PORT=6380` in `.env`). |
 | `PSSecurityException: File ... Activate.ps1 cannot be loaded` | Windows PowerShell execution policy blocks scripts. | Run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in your PowerShell terminal before running `.\.venv\Scripts\Activate.ps1`. |
 | `JSONRPCError / Protocol Desynchronization` | Server wrote stdout text instead of clean JSON-RPC messages. | Ensure no `print()` statements are added to MCP code. All logging in this repository strictly outputs JSON to `stderr`. |

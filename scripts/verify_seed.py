@@ -1,4 +1,4 @@
-"""Verification script for AtlasPay seed data integrity."""
+"""Verification script for GraphCortex seed data integrity."""
 
 import sys
 from graph_intelligence.common.config import get_settings

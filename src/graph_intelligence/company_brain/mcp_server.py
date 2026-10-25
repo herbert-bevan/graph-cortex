@@ -1,4 +1,4 @@
-"""atlaspay-brain MCP server (Track 3)."""
+"""graphcortex-brain MCP server."""
 
 from typing import Any, Dict, List, Optional
 from mcp.server.fastmcp import FastMCP
@@ -7,15 +7,15 @@ from graph_intelligence.common.logging_setup import log_operation
 from graph_intelligence.company_brain.service import CompanyBrainService
 
 SERVER_INSTRUCTIONS = """
-AtlasPay Company Brain Server.
+GraphCortex Knowledge Brain Server.
 Provides source-backed, hallucination-free answers and authoritative architecture information
-over the seeded AtlasPay company knowledge graph.
+over the enterprise knowledge graph.
 Use this server to look up service ownership, tech lead assignments, team structures,
 architecture decision records (ADRs), incident reviews, runbooks, and design rationales.
 Private user session memory is completely isolated and cannot be accessed from this server.
 """
 
-mcp = FastMCP("atlaspay-brain", instructions=SERVER_INSTRUCTIONS)
+mcp = FastMCP("graphcortex-brain", instructions=SERVER_INSTRUCTIONS)
 _service = CompanyBrainService()
 
 
@@ -42,7 +42,7 @@ def get_service_brief(
     service: str = Field(..., description="Service identifier, name, or alias (e.g. 'PaymentService', 'svc-payment', 'gateway')"),
 ) -> Dict[str, Any]:
     """
-    Retrieve an authoritative, comprehensive brief for an AtlasPay microservice.
+    Retrieve an authoritative, comprehensive brief for an enterprise microservice.
     Includes technical ownership (lead + team), parent project, dependencies, downstream dependents,
     implemented features, past incidents, governing decisions, and source documents.
     """

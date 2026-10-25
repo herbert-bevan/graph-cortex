@@ -1,4 +1,4 @@
-"""Deterministic scoring engine for user memory retrieval (Track 2)."""
+"""Deterministic scoring engine for user memory retrieval."""
 
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple

@@ -1,10 +1,10 @@
-# FalkorDB Graph Intelligence: Comprehensive Architecture & File-Level Code Flow
+# GraphCortex: Comprehensive Architecture & File-Level Code Flow
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Architecture: Clean / Hexagonal](https://img.shields.io/badge/Architecture-Clean%20%2F%20Hexagonal-green.svg)]()
 [![Model Context Protocol](https://img.shields.io/badge/MCP-1.30-purple.svg)](https://modelcontextprotocol.io/)
 
-This document provides an exhaustive, file-by-file technical breakdown of the entire **FalkorDB Graph Intelligence Platform & Autonomous Memory Engine**. It explains how every component functions, how data flows through the layers, why each file is decoupled into its specific role, and how the system guarantees security, deterministic retrieval, and protocol stability.
+This document provides an exhaustive, file-by-file technical breakdown of the entire **GraphCortex Platform & Autonomous Memory Engine**. It explains how every component functions, how data flows through the layers, why each file is decoupled into its specific role, and how the system guarantees security, deterministic retrieval, and protocol stability.
 
 ---
 
@@ -64,8 +64,8 @@ The codebase is engineered around six fundamental design principles:
 
 1. **Clean / Hexagonal Architecture (Ports and Adapters)**:
    - **Drivers / Frameworks (Outer Layer)**: Model Context Protocol (FastMCP) running over `stdio`.
-   - **Adapters Layer**: [`GraphStore`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/falkordb_client.py#L40-L145) adapts Redis/FalkorDB driver calls into clean Python dictionaries.
-   - **Domain Services (Core Layer)**: Pure Python domain services ([`ReasoningService`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/reasoning/service.py#L20-L481), [`MemoryService`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/memory/service.py#L22-L288), [`CompanyBrainService`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/company_brain/service.py#L18-L312)) contain all graph algorithms, scoring math, and business logic.
+   - **Adapters Layer**: [`GraphStore`](src/graph_intelligence/common/falkordb_client.py) adapts Redis/FalkorDB driver calls into clean Python dictionaries.
+   - **Domain Services (Core Layer)**: Pure Python domain services ([`ReasoningService`](src/graph_intelligence/reasoning/service.py#L20-L481), [`MemoryService`](src/graph_intelligence/memory/service.py#L22-L288), [`CompanyBrainService`](src/graph_intelligence/company_brain/service.py#L18-L312)) contain all graph algorithms, scoring math, and business logic.
    - Domain logic has zero knowledge of MCP transports or JSON-RPC protocols.
 
 2. **Strict Single Responsibility Principle (SRP)**:
@@ -77,19 +77,19 @@ The codebase is engineered around six fundamental design principles:
 
 3. **Zero-Stdout Protocol Inviolability**:
    - MCP uses `stdin` and `stdout` for JSON-RPC 2.0 messages. Any unexpected text written to `stdout` (e.g. `print()`, unformatted logger output, banner greetings) desynchronizes the JSON-RPC framing and crashes the client connection.
-   - The entire codebase routes structured JSON logging strictly to `stderr` via [`logging_setup.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/logging_setup.py#L1-L80).
+   - The entire codebase routes structured JSON logging strictly to `stderr` via [`logging_setup.py`](src/graph_intelligence/common/logging_setup.py#L1-L80).
 
 4. **Security by Isolation & Defense-in-Depth**:
    - **No Raw Cypher Execution**: Neither LLMs nor clients have access to arbitrary query execution (`no run_cypher`).
-   - **Server-Side Identity Injection**: The `user_id` parameter is never exposed in any MCP tool schema. It is resolved exclusively on the server from trusted environment/process context via [`TrustedIdentity`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/identity.py#L7-L15).
-   - **Payload Secret Scanning**: Every text input passes through [`scan_for_secrets()`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/validation.py#L31-L48) before hitting database queries.
+   - **Server-Side Identity Injection**: The `user_id` parameter is never exposed in any MCP tool schema. It is resolved exclusively on the server from trusted environment/process context via [`TrustedIdentity`](src/graph_intelligence/common/identity.py#L7-L15).
+   - **Payload Secret Scanning**: Every text input passes through [`scan_for_secrets()`](src/graph_intelligence/common/validation.py#L31-L48) before hitting database queries.
 
 5. **Deterministic Graph Scoring (No Vector Embeddings)**:
    - Long-term memory retrieval operates without vector databases, embedding APIs, or cosine similarity drift.
    - Instead, it uses multi-factor deterministic scoring: Project Match (+4), Entity Match (+5/entity, max 15), Keyword Phrase Match (+3/keyword, max 12), Token Overlap (+2/token, max 12), Content Overlap (+0.5/token, max 3), 1-Hop Graph Proximity (+2, max 4), Recency Decay (+0.0 to +0.5), and Superseded Penalty (-3.0).
 
 6. **Driver Encapsulation**:
-   - The official `falkordb` library is imported in exactly **one file** across the entire application: [`falkordb_client.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/falkordb_client.py#L7-L8). No service, tool, script, or query builder interacts with driver primitives directly.
+   - The official `falkordb` library is imported in exactly **one file** across the entire application: [`falkordb_client.py`](src/graph_intelligence/common/falkordb_client.py#L7-L8). No service, tool, script, or query builder interacts with driver primitives directly.
 
 ---
 
@@ -104,9 +104,9 @@ flowchart TD
   end
 
   subgraph MCP_Boundary["MCP Server Boundary (stdio transport)"]
-    Antigravity <-->|JSON-RPC stdio| S1["atlaspay-reasoning<br/>(4 Tools)"]
-    Claude <-->|JSON-RPC stdio| S2["atlaspay-memory<br/>(5 Tools)"]
-    Inspector <-->|JSON-RPC stdio| S3["atlaspay-brain<br/>(5 Tools)"]
+    Antigravity <-->|JSON-RPC stdio| S1["graphcortex-reasoning<br/>(4 Tools)"]
+    Claude <-->|JSON-RPC stdio| S2["graphcortex-memory<br/>(5 Tools)"]
+    Inspector <-->|JSON-RPC stdio| S3["graphcortex-brain<br/>(5 Tools)"]
   end
 
   subgraph Service_Layer["Domain Service Layer"]
@@ -148,7 +148,7 @@ flowchart TD
 
 ### 3.1 Shared Domain Core (`src/graph_intelligence/common/`)
 
-#### [`config.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/config.py)
+#### [`config.py`](src/graph_intelligence/common/config.py)
 - **Primary Responsibility**: Centralized, type-safe environment configuration management using Pydantic Settings.
 - **Key Classes & Methods**:
   - `Settings`: Subclasses `BaseSettings`. Exposes properties such as `FALKORDB_HOST`, `FALKORDB_PORT`, `FALKORDB_USERNAME`, `FALKORDB_PASSWORD` (`SecretStr`), `FALKORDB_SSL`, `FALKORDB_GRAPH`, `DEMO_USER_ID`, `DEFAULT_PROJECT_ID`, and `LOG_LEVEL`.
@@ -156,7 +156,7 @@ flowchart TD
   - `get_settings()`: Cached lru-singleton provider reading from `.env` or system environment variables.
 - **Why Separate?**: Eliminates scattered `os.getenv()` calls across the project, enforces configuration validation at startup, and protects sensitive secrets from accidental leakage in stack traces or logs.
 
-#### [`errors.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/errors.py)
+#### [`errors.py`](src/graph_intelligence/common/errors.py)
 - **Primary Responsibility**: Defines the enterprise exception hierarchy for domain errors.
 - **Key Classes**:
   - `GraphIntelligenceError`: Root exception carrying a human-readable `message` and machine-readable `error_code`.
@@ -168,7 +168,7 @@ flowchart TD
   - `DepthLimitExceeded`: Raised if an agent requests traversal depths beyond allowed bounds.
 - **Why Separate?**: Decouples underlying third-party driver errors (`redis.exceptions.ConnectionError`, `redis.ResponseError`) from domain logic, allowing consistent mapping to standardized JSON-RPC error payloads.
 
-#### [`falkordb_client.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/falkordb_client.py)
+#### [`falkordb_client.py`](src/graph_intelligence/common/falkordb_client.py)
 - **Primary Responsibility**: The **exclusive database gateway** for the entire system. Encapsulates all connection pooling, retry handling, header decoding, row transformation, index enforcement, and graph management.
 - **Key Classes & Methods**:
   - `get_falkordb_connection() -> FalkorDB`: Lazy singleton connection factory with configurable socket and connection timeouts.
@@ -192,21 +192,21 @@ flowchart TD
   ```
 - **Why Separate?**: Driver isolation is a critical software design pattern. By restricting `falkordb` imports to this single file, any driver version upgrade, Redis protocol variation, or database engine swap requires modifications in exactly one place.
 
-#### [`identity.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/identity.py)
+#### [`identity.py`](src/graph_intelligence/common/identity.py)
 - **Primary Responsibility**: Server-side trusted caller identity resolution.
 - **Key Classes & Methods**:
   - `TrustedIdentity(user_id: str)`: Immutable frozen dataclass encapsulating the active authenticated user context.
   - `TrustedIdentity.current() -> TrustedIdentity`: Factory method resolving the active user from trusted configuration (`DEMO_USER_ID`) or security context.
 - **Why Separate?**: **Tenant Security Isolation**. In agentic workflows, LLMs must never be permitted to specify `user_id` as a tool argument. Exposing `user_id` allows prompt injection attacks where an agent is coerced into querying or modifying another engineer's private sessions. Separating identity resolution into its own trusted module guarantees that tenant identity is resolved strictly server-side.
 
-#### [`ids.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/ids.py)
+#### [`ids.py`](src/graph_intelligence/common/ids.py)
 - **Primary Responsibility**: Deterministic and unique entity identifier generation and timestamp formatting.
 - **Key Functions**:
   - `new_id(prefix: str) -> str`: Generates clean, readable prefixed random IDs (e.g. `sum_295209b8f3c8`, `task_a1b2c3d4e5f6`, `sess_0192837465ab`).
   - `utcnow_iso() -> str`: Emits timezone-aware ISO 8601 UTC timestamps (e.g. `2026-10-21T15:30:00.000000+00:00`).
 - **Why Separate?**: Eliminates ad-hoc UUID slicing across different services, ensures standard prefix conventions across node labels, and guarantees consistent UTC ISO formatting across all graph nodes.
 
-#### [`logging_setup.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/logging_setup.py)
+#### [`logging_setup.py`](src/graph_intelligence/common/logging_setup.py)
 - **Primary Responsibility**: Safe, structured telemetry formatting streaming exclusively to `sys.stderr`.
 - **Key Classes & Functions**:
   - `StderrJsonFormatter`: Formats standard Python logging records into single-line JSON strings (`timestamp`, `level`, `message`, `op_id`, `tool`, `duration_ms`, `status`).
@@ -214,7 +214,7 @@ flowchart TD
   - `log_operation(tool_name: str)`: Context manager wrapping MCP tool invocations. Automatically records operation duration in milliseconds, assigns a correlation `op_id`, traps error codes, and emits structured audit logs without leaking input parameters or sensitive text.
 - **Why Separate?**: MCP stdio protocol protection. In an MCP stdio server, standard output (`sys.stdout`) is strictly reserved for JSON-RPC 2.0 frames. If any internal component writes unformatted text or debug statements to stdout, the client protocol parser desynchronizes and aborts. Isolating logging ensures that stdout remains completely pure.
 
-#### [`result_models.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/result_models.py)
+#### [`result_models.py`](src/graph_intelligence/common/result_models.py)
 - **Primary Responsibility**: Uniform API envelope modeling and error code definitions.
 - **Key Classes & Functions**:
   - `ErrorCode(str, Enum)`: Enumerates all supported error conditions (`INVALID_INPUT`, `UNKNOWN_ENTITY`, `UNAUTHORIZED_SCOPE`, `DATABASE_UNAVAILABLE`, `CONFLICT`, etc.).
@@ -222,7 +222,7 @@ flowchart TD
   - `error_response(error_code, message, **kwargs) -> Dict[str, Any]`: Generates a standard error envelope (`{"ok": false, "error_code": "...", "message": "..."}`).
 - **Why Separate?**: Guarantees contract uniformity across all 14 MCP tools. Whether an agent invokes a memory tool, a reasoning tool, or a brain tool, response envelopes share the identical top-level structure, simplifying parsing and LLM reasoning.
 
-#### [`schema.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/schema.py)
+#### [`schema.py`](src/graph_intelligence/common/schema.py)
 - **Primary Responsibility**: Canonical definition of allowable graph topology, node labels, relationship taxonomy, and edge constraints.
 - **Key Constants & Functions**:
   - `COMPANY_LABELS`: Set of 9 authoritative company labels (`Company`, `Team`, `Person`, `Project`, `Service`, `Feature`, `Incident`, `Decision`, `Document`).
@@ -232,7 +232,7 @@ flowchart TD
   - `is_valid_relationship(rel_type, from_label, to_label)`: Validates relationship legality before graph mutation.
 - **Why Separate?**: Schema governance. In schema-optional or property graph databases like FalkorDB, typos in Cypher relationship names or labels can silently corrupt data topology. Centralizing allowable labels and relationships allows both validation layers and index builders to enforce schema integrity programmatically.
 
-#### [`text.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/text.py)
+#### [`text.py`](src/graph_intelligence/common/text.py)
 - **Primary Responsibility**: Deterministic text processing, normalization, tokenization, and squashing.
 - **Key Functions**:
   - `squash(s: str) -> str`: Converts arbitrary text into lowercase alphanumeric characters only (`"Payment-Service"` -> `"paymentservice"`, `"ADR-014"` -> `"adr014"`). Used for entity resolution and alias matching.
@@ -241,7 +241,7 @@ flowchart TD
   - `extract_keywords(terms: List[str]) -> List[str]`: Normalizes, deduplicates, filters generic filler words (`thing`, `test`, `note`), and caps results to 20 high-value keywords.
 - **Why Separate?**: Provides a unified, deterministic text-processing library used identically across the Entity Resolver, the Memory Scoring Engine, and Ingestion Validation, guaranteeing consistent token matching across the application.
 
-#### [`validation.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/common/validation.py)
+#### [`validation.py`](src/graph_intelligence/common/validation.py)
 - **Primary Responsibility**: Input parameter boundary enforcement and automated secret/credential detection.
 - **Key Functions**:
   - `scan_for_secrets(text: Optional[str])`: Inspects payloads using compiled regular expressions for passwords, API keys (`sk-...`, `ghp_...`, `glpat-...`), bearer tokens, and RSA/PEM private key headers. Computes **Shannon entropy** on 32+ character strings; tokens with entropy > 4.2 bits/symbol trigger a `ValidationError`.
@@ -254,7 +254,7 @@ flowchart TD
 
 ### 3.2 Graph Reasoning Engine (`src/graph_intelligence/reasoning/`)
 
-#### [`queries.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/reasoning/queries.py)
+#### [`queries.py`](src/graph_intelligence/reasoning/queries.py)
 - **Primary Responsibility**: Parameterized Cypher query builders for dependency traversal, blast radius impact graphs, and shortest paths.
 - **Key Queries & Builders**:
   - `ALL_SERVICES_QUERY`: Fetches service IDs, names, and aliases for fuzzy resolution.
@@ -264,7 +264,7 @@ flowchart TD
   - `get_shortest_path_query(max_hops)`: Executes Cypher's `shortestPath((a)-[*..{max_hops}]-(b))` to reveal hidden architectural connections between disparate nodes.
 - **Why Separate?**: Keeps complex Cypher graph queries completely separate from Python orchestration logic and JSON formatting.
 
-#### [`service.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/reasoning/service.py)
+#### [`service.py`](src/graph_intelligence/reasoning/service.py)
 - **Primary Responsibility**: Orchestrates graph reasoning, performs entity resolution, executes traversals, and computes blast radius risk scores.
 - **Key Methods**:
   - `find_service_dependencies(service, direction, max_depth, limit)`: Resolves service names or aliases, validates traversal depth, executes directional queries, deduplicates paths, and returns structured upstream dependencies and downstream dependents.
@@ -277,8 +277,8 @@ flowchart TD
   - `search_connected_entities(query, entity_types, limit)`: Discovers entities matching keywords and returns immediate neighbor topologies.
 - **Why Separate?**: Contains pure graph reasoning and algorithmic analysis. Decoupled from transport mechanics, this service can be invoked directly by tests, CLI scripts, or MCP tool handlers.
 
-#### [`mcp_server.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/reasoning/mcp_server.py)
-- **Primary Responsibility**: FastMCP server definition for `atlaspay-reasoning`.
+#### [`mcp_server.py`](src/graph_intelligence/reasoning/mcp_server.py)
+- **Primary Responsibility**: FastMCP server definition for `graphcortex-reasoning`.
 - **Exposed Tools**:
   1. `find_service_dependencies`
   2. `analyze_change_impact`
@@ -294,7 +294,7 @@ flowchart TD
 
 ### 3.3 Autonomous Memory Engine (`src/graph_intelligence/memory/`)
 
-#### [`queries.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/memory/queries.py)
+#### [`queries.py`](src/graph_intelligence/memory/queries.py)
 - **Primary Responsibility**: Parameterized Cypher statements managing tenant-scoped memory persistence and evolution.
 - **Key Queries**:
   - `MERGE_USER_QUERY`: Ensures the `User` node exists.
@@ -311,7 +311,7 @@ flowchart TD
   - `MEMORY_STATUS_COUNTS_QUERY`: Counts active, superseded, and archived summaries for the active user.
 - **Why Separate?**: Isolates all database write and read syntax for user memory, ensuring Cypher queries are easily audited for security and index optimization.
 
-#### [`retrieval.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/memory/retrieval.py)
+#### [`retrieval.py`](src/graph_intelligence/memory/retrieval.py)
 - **Primary Responsibility**: Deterministic, multi-factor scoring engine for cross-session memory retrieval.
 - **Key Functions**:
   - `calculate_recency_score(created_at_str) -> float`: Calculates a linear decay score from `+0.5` (created today) down to `0.0` (30+ days old).
@@ -328,7 +328,7 @@ flowchart TD
     - Returns `(total_score, matched_keywords, matched_entities, match_reason)`.
 - **Why Separate?**: Isolates the mathematical scoring formula. Retrieval scoring can be tuned, benchmarked, and unit-tested in isolation without requiring a running FalkorDB database instance.
 
-#### [`service.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/memory/service.py)
+#### [`service.py`](src/graph_intelligence/memory/service.py)
 - **Primary Responsibility**: Coordinates user memory workflows: writing summaries, reading back for confirmation, resolving mentioned entities, linking tasks, executing version updates, and performing candidate search.
 - **Key Methods**:
   - `remember_session_summary(...)`:
@@ -350,8 +350,8 @@ flowchart TD
   - `get_memory_status()`: Summarizes active, superseded, and archived memory counts.
 - **Why Separate?**: Coordinates the state machine of user memory. By decoupling storage queries from scoring math, `MemoryService` cleanly orchestrates multi-step transactions.
 
-#### [`mcp_server.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/memory/mcp_server.py)
-- **Primary Responsibility**: FastMCP server definition for `atlaspay-memory`.
+#### [`mcp_server.py`](src/graph_intelligence/memory/mcp_server.py)
+- **Primary Responsibility**: FastMCP server definition for `graphcortex-memory`.
 - **Exposed Tools**:
   1. `remember_session_summary`
   2. `search_user_memory`
@@ -372,7 +372,7 @@ flowchart TD
 
 ### 3.4 Corporate Brain & Knowledge Graph (`src/graph_intelligence/company_brain/`)
 
-#### [`queries.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/company_brain/queries.py)
+#### [`queries.py`](src/graph_intelligence/company_brain/queries.py)
 - **Primary Responsibility**: Parameterized Cypher queries for company knowledge retrieval.
 - **Key Queries**:
   - `SERVICE_BRIEF_QUERY`: Aggregates an entire service profile: owners, team, project, dependencies, dependents, features, ADRs, incidents, and documentation.
@@ -380,7 +380,7 @@ flowchart TD
   - `ALL_COMPANY_ENTITIES_QUERY`: Retrieves all company nodes and aliases to populate the resolver cache.
 - **Why Separate?**: Isolates company-domain Cypher queries for clean maintenance.
 
-#### [`resolver.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/company_brain/resolver.py)
+#### [`resolver.py`](src/graph_intelligence/company_brain/resolver.py)
 - **Primary Responsibility**: Fast, in-memory entity resolution with a 60-second TTL cache.
 - **Key Classes & Methods**:
   - `EntityResolver(store: GraphStore, ttl_seconds: float = 60.0)`
@@ -388,7 +388,7 @@ flowchart TD
   - `resolve_all(text: str) -> List[Dict[str, Any]]`: Scans arbitrary text (e.g. user questions) and extracts all mentioned company entities, sorting candidates by name length descending to ensure longest matches take precedence (e.g. "Payment Gateway Service" matches before "Payment").
 - **Why Separate?**: Performance optimization. Resolving entities on every turn via remote database calls creates latency. Caching the lightweight entity catalog in memory reduces round-trips while keeping data fresh via TTL expiration.
 
-#### [`service.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/company_brain/service.py)
+#### [`service.py`](src/graph_intelligence/company_brain/service.py)
 - **Primary Responsibility**: Provides grounded, fact-checked answers and detailed briefs over company knowledge.
 - **Key Methods**:
   - `search_company_knowledge(query, entity_types, limit)`: Performs token- and alias-aware entity discovery and fetches associated documentation.
@@ -403,7 +403,7 @@ flowchart TD
   - `ingest_company_records(source, records, relationships)`: Delegates to `IngestionEngine`.
 - **Why Separate?**: Implements deterministic, source-backed question answering. Keeps entity resolution, intent parsing, and evidence assembly organized in a dedicated service.
 
-#### [`ingestion.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/company_brain/ingestion.py)
+#### [`ingestion.py`](src/graph_intelligence/company_brain/ingestion.py)
 - **Primary Responsibility**: Validated, idempotent ingestion of external enterprise records.
 - **Key Classes & Methods**:
   - `IngestionEngine(store: GraphStore)`
@@ -414,8 +414,8 @@ flowchart TD
     - Validates relationship triples against `ALLOWED_RELATIONSHIPS` before creating edges.
 - **Why Separate?**: Ingestion security and validation. Prevents malformed or unauthorized data from corrupting the company knowledge graph.
 
-#### [`mcp_server.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/company_brain/mcp_server.py)
-- **Primary Responsibility**: FastMCP server definition for `atlaspay-brain`.
+#### [`mcp_server.py`](src/graph_intelligence/company_brain/mcp_server.py)
+- **Primary Responsibility**: FastMCP server definition for `graphcortex-brain`.
 - **Exposed Tools**:
   1. `search_company_knowledge`
   2. `get_service_brief`
@@ -428,10 +428,10 @@ flowchart TD
 
 ### 3.5 Seeding & Reference Graph (`src/graph_intelligence/seed/`)
 
-#### [`demo_data.json`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/seed/demo_data.json)
-- **Primary Responsibility**: The authoritative synthetic enterprise dataset for AtlasPay.
+#### [`demo_data.json`](src/graph_intelligence/seed/demo_data.json)
+- **Primary Responsibility**: The authoritative synthetic enterprise dataset for GraphCortex.
 - **Contents**:
-  - 1 Company node (`AtlasPay`)
+  - 1 Company node (`GraphCortex`)
   - 3 Teams (`Core Payments`, `Billing & Invoicing`, `Core Infrastructure`)
   - 4 People (Tech leads, architects, and engineers)
   - 1 Project (`Payment Reliability 2026`)
@@ -443,7 +443,7 @@ flowchart TD
   - 53 explicitly defined semantic relationships linking the nodes.
 - **Why Separate?**: Completely decouples graph content from database ingestion code. New services, ADRs, or incidents can be added to the JSON document without altering Python scripts.
 
-#### [`seed_company_graph.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/src/graph_intelligence/seed/seed_company_graph.py)
+#### [`seed_company_graph.py`](src/graph_intelligence/seed/seed_company_graph.py)
 - **Primary Responsibility**: Programmatic seeder that provisions the graph from `demo_data.json`.
 - **Key Functions**:
   - `seed_company_graph(store, data_path, clear_existing=False)`:
@@ -457,19 +457,19 @@ flowchart TD
 
 ### 3.6 Operational Scripts (`scripts/`)
 
-#### [`check_connection.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/scripts/check_connection.py)
+#### [`check_connection.py`](scripts/check_connection.py)
 - **Purpose**: Diagnostic utility that attempts connection to FalkorDB on configured host/port, runs `RETURN 1`, and reports graph existence and latency.
 
-#### [`seed_demo.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/scripts/seed_demo.py)
+#### [`seed_demo.py`](scripts/seed_demo.py)
 - **Purpose**: CLI runner that executes `seed_company_graph(clear_existing=True)` to populate a fresh database instance.
 
-#### [`verify_seed.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/scripts/verify_seed.py)
+#### [`verify_seed.py`](scripts/verify_seed.py)
 - **Purpose**: Audit script that queries node counts by label, verifies relationship totals, and inspects active database indexes.
 
-#### [`reset_demo.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/scripts/reset_demo.py)
+#### [`reset_demo.py`](scripts/reset_demo.py)
 - **Purpose**: Selective cleanup utility. Can delete user-scoped memories while preserving the company knowledge graph, or reset the entire database to baseline.
 
-#### [`spike_falkordb.py`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphHacks/scripts/spike_falkordb.py)
+#### [`spike_falkordb.py`](scripts/spike_falkordb.py)
 - **Purpose**: Low-level driver test script verifying connection parameters, authentication, and driver capability against FalkorDB Cloud.
 
 ---
@@ -507,7 +507,7 @@ tests/
 sequenceDiagram
   autonumber
   participant Agent as AI Agent (Client)
-  participant MCP as atlaspay-reasoning
+  participant MCP as graphcortex-reasoning
   participant Svc as ReasoningService
   participant Store as GraphStore Adapter
   participant DB as FalkorDB Cloud
@@ -535,7 +535,7 @@ sequenceDiagram
 sequenceDiagram
   autonumber
   participant Agent as AI Agent (Client)
-  participant MCP as atlaspay-memory
+  participant MCP as graphcortex-memory
   participant Svc as MemoryService
   participant Resolver as EntityResolver
   participant Store as GraphStore Adapter
@@ -572,7 +572,7 @@ sequenceDiagram
 sequenceDiagram
   autonumber
   participant Agent as AI Agent in NEW Session
-  participant MCP as atlaspay-memory
+  participant MCP as graphcortex-memory
   participant Svc as MemoryService
   participant Scorer as retrieval.score_summary()
   participant Store as GraphStore Adapter
@@ -602,7 +602,7 @@ sequenceDiagram
 sequenceDiagram
   autonumber
   participant Agent as AI Agent (Client)
-  participant MCP as atlaspay-brain
+  participant MCP as graphcortex-brain
   participant Svc as CompanyBrainService
   participant Resolver as EntityResolver
   participant Store as GraphStore Adapter

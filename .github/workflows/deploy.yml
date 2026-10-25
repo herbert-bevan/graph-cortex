@@ -1,0 +1,61 @@
+name: CI/CD Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Unit & Integrity Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Execute Unit Tests
+        run: |
+          pytest tests/unit
+
+  deploy:
+    name: Deploy to VPS via SSH
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Execute Remote Deployment Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            echo "[INFO] Navigating to application directory..."
+            cd /opt/graph-mcp
+
+            echo "[INFO] Pulling latest changes from main..."
+            git pull origin main
+
+            echo "[INFO] Rebuilding and restarting containers..."
+            docker compose up -d --build
+
+            echo "[INFO] Waiting for services to become healthy..."
+            sleep 5
+
+            echo "[INFO] Ensuring FalkorDB indexes and demo seed are provisioned..."
+            docker compose exec -T app python scripts/seed_demo.py || true
+
+            echo "[INFO] Verifying deployment health..."
+            docker compose ps
+            echo "[SUCCESS] Deployment completed successfully!"

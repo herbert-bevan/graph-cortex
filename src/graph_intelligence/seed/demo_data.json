@@ -2,8 +2,8 @@
   "company_nodes": [
     {
       "label": "Company",
-      "id": "co-atlaspay",
-      "name": "AtlasPay",
+      "id": "co-graphcortex",
+      "name": "GraphCortex",
       "properties": {
         "description": "Synthetic fintech payment infrastructure platform"
       }
@@ -38,7 +38,7 @@
       "name": "Maya Chen",
       "properties": {
         "role": "Staff Engineer, Tech Lead",
-        "email": "maya.chen@atlaspay.synthetic"
+        "email": "maya.chen@graphcortex.internal"
       }
     },
     {
@@ -47,7 +47,7 @@
       "name": "Arjun Rao",
       "properties": {
         "role": "Senior Staff Engineer",
-        "email": "arjun.rao@atlaspay.synthetic"
+        "email": "arjun.rao@graphcortex.internal"
       }
     },
     {
@@ -56,7 +56,7 @@
       "name": "Elena Park",
       "properties": {
         "role": "Staff Infrastructure Engineer",
-        "email": "elena.park@atlaspay.synthetic"
+        "email": "elena.park@graphcortex.internal"
       }
     },
     {
@@ -65,7 +65,7 @@
       "name": "Noah Williams",
       "properties": {
         "role": "Principal ML/Risk Engineer",
-        "email": "noah.williams@atlaspay.synthetic"
+        "email": "noah.williams@graphcortex.internal"
       }
     },
     {
@@ -74,7 +74,7 @@
       "name": "Priya Shah",
       "properties": {
         "role": "Senior Software Engineer",
-        "email": "priya.shah@atlaspay.synthetic"
+        "email": "priya.shah@graphcortex.internal"
       }
     },
     {
@@ -247,7 +247,7 @@
       "id": "doc-adr-014",
       "name": "ADR-014 Idempotency Keys",
       "properties": {
-        "uri": "atlaspay://docs/adr-014",
+        "uri": "graphcortex://docs/adr-014",
         "doc_type": "adr",
         "excerpt": "Architecture Decision Record detailing idempotency key design for PaymentService to deduplicate retried API calls and eliminate duplicate charges."
       }
@@ -257,7 +257,7 @@
       "id": "doc-adr-021",
       "name": "ADR-021 Retry Policy",
       "properties": {
-        "uri": "atlaspay://docs/adr-021",
+        "uri": "graphcortex://docs/adr-021",
         "doc_type": "adr",
         "excerpt": "Standard retry policy specification establishing exponential backoff with jitter and 5-attempt limit across all payment integration clients."
       }
@@ -267,7 +267,7 @@
       "id": "doc-ir-2026-041",
       "name": "Incident Review IR-2026-041",
       "properties": {
-        "uri": "atlaspay://docs/ir-2026-041",
+        "uri": "graphcortex://docs/ir-2026-041",
         "doc_type": "incident_review",
         "excerpt": "Post-incident analysis for INC-PAY-042 payment timeouts caused by downstream connection pool starvation and unbounded retry cascades."
       }
@@ -277,7 +277,7 @@
       "id": "doc-runbook-payment-reliability",
       "name": "Payment Reliability Runbook",
       "properties": {
-        "uri": "atlaspay://docs/runbook-payment-reliability",
+        "uri": "graphcortex://docs/runbook-payment-reliability",
         "doc_type": "runbook",
         "excerpt": "Operational runbook for diagnosing payment processing degradation, timeout spikes, and connection pool exhaustion."
       }
@@ -287,7 +287,7 @@
       "id": "doc-service-ownership-catalog",
       "name": "Service Ownership Catalog",
       "properties": {
-        "uri": "atlaspay://docs/service-ownership-catalog",
+        "uri": "graphcortex://docs/service-ownership-catalog",
         "doc_type": "catalog",
         "excerpt": "Authoritative directory mapping core microservices (Payment, Ledger, Gateway, Risk, Notification) to responsible engineering teams and tech leads."
       }
@@ -312,9 +312,9 @@
     }
   ],
   "relationships": [
-    {"type": "BELONGS_TO", "from_id": "team-payments", "to_id": "co-atlaspay"},
-    {"type": "BELONGS_TO", "from_id": "team-platform", "to_id": "co-atlaspay"},
-    {"type": "BELONGS_TO", "from_id": "team-risk", "to_id": "co-atlaspay"},
+    {"type": "BELONGS_TO", "from_id": "team-payments", "to_id": "co-graphcortex"},
+    {"type": "BELONGS_TO", "from_id": "team-platform", "to_id": "co-graphcortex"},
+    {"type": "BELONGS_TO", "from_id": "team-risk", "to_id": "co-graphcortex"},
 
     {"type": "MEMBER_OF", "from_id": "per-maya-chen", "to_id": "team-payments"},
     {"type": "MEMBER_OF", "from_id": "per-priya-shah", "to_id": "team-payments"},

@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
+COPY scripts/ ./scripts/
 
 RUN pip install --no-cache-dir -e ".[dev]"
 
-CMD ["python", "-m", "graph_intelligence.reasoning.mcp_server"]
+EXPOSE 8000
+
+CMD ["uvicorn", "graph_intelligence.remote.server:app", "--host", "0.0.0.0", "--port", "8000"]
