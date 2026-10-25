@@ -8,6 +8,7 @@ Provides:
 5. Ingestion tool omitted to prevent database pollution by guests or attackers.
 """
 
+import asyncio
 import contextvars
 from datetime import datetime, timezone
 import json
@@ -18,6 +19,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from contextlib import asynccontextmanager
@@ -34,6 +36,7 @@ from graph_intelligence.remote.auth import (
     cleanup_expired_guests,
     init_db,
 )
+from graph_intelligence.remote.cleanup import cleanup_stale_records_and_graphs
 
 logger = get_logger("remote_server")
 
@@ -54,7 +57,23 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning(f"FalkorDB initialization note: {exc}")
 
-    yield
+    # Automated daily cleanup background worker (runs once a day)
+    async def _daily_cleanup_worker():
+        await asyncio.sleep(120)  # Wait 2 minutes after startup before initial run
+        while True:
+            try:
+                logger.info("Executing scheduled daily cleanup of dead records and graphs...")
+                stats = cleanup_stale_records_and_graphs(days=2)
+                logger.info(f"Scheduled daily cleanup finished: {stats}")
+            except Exception as ex:
+                logger.warning(f"Scheduled daily cleanup worker note: {ex}")
+            await asyncio.sleep(86400)  # 24 hours
+
+    cleanup_task = asyncio.create_task(_daily_cleanup_worker())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
 
 
 # Context variable to hold the active authenticated guest ID for the current request
@@ -67,6 +86,9 @@ active_guest_context: contextvars.ContextVar[Optional[str]] = contextvars.Contex
 # ---------------------------------------------------------------------------
 mcp = FastMCP(
     name="graph-cortex",
+    transport_security=TransportSecuritySettings(
+        enable_dns_rebinding_protection=False,
+    ),
     instructions="""
 You are connected to the GraphCortex Platform.
 You have access to 3 core capabilities:
@@ -1308,7 +1330,11 @@ PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
 @app.get("/portal", response_class=HTMLResponse)
 async def portal_page(request: Request):
     """Serve the interactive guest auth and architecture portal."""
-    base_url = str(request.base_url).rstrip("/")
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("host", request.url.netloc)
+    if "localhost" not in host and "127.0.0.1" not in host:
+        proto = "https"
+    base_url = f"{proto}://{host}".rstrip("/")
     html_content = PORTAL_HTML_TEMPLATE.replace("{{base_url}}", base_url)
     return HTMLResponse(content=html_content)
 
@@ -1350,10 +1376,10 @@ async def api_check_quota(request: Request):
 
 
 @app.post("/api/admin/cleanup")
-async def api_trigger_cleanup(request: Request):
-    """Scheduled task endpoint to purge expired guest accounts."""
-    deleted_count = cleanup_expired_guests()
-    return JSONResponse({"ok": True, "deleted_guests": deleted_count})
+async def api_trigger_cleanup(request: Request, days: int = 2):
+    """Scheduled task endpoint to purge dead guest accounts, logs, and FalkorDB graph data older than `days` days."""
+    stats = cleanup_stale_records_and_graphs(days=days)
+    return JSONResponse({"ok": True, **stats})
 
 
 # Mount FastMCP SSE transport after all explicit Web & API routes
