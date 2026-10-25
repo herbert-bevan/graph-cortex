@@ -682,8 +682,6 @@ For hosting a 24/7 public MCP endpoint for Claude Desktop, Cursor, and Antigravi
 4. **Nginx Reverse Proxy & SSL**:
    Route traffic from your existing Nginx web server to `127.0.0.1:8000` with `proxy_buffering off;` using [`scripts/nginx_graph_cortex.conf`](scripts/nginx_graph_cortex.conf).
 
-> [!TIP]
-> For the complete step-by-step VPS walkthrough including Nginx reverse proxy configuration, Certbot SSL, Cloudflare protection, and zero-touch GitHub Actions CI/CD automation, refer to **[.agent/plans/VPS_AND_CICD_SETUP_GUIDE.md](.agent/plans/VPS_AND_CICD_SETUP_GUIDE.md)**.
 
 ---
 
