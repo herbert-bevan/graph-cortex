@@ -387,255 +387,872 @@ app.add_middleware(GuestAuthMiddleware)
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # Web Portal UI (HTML) & APIs
 # ---------------------------------------------------------------------------
 
-@app.get("/", response_class=HTMLResponse)
-@app.get("/login", response_class=HTMLResponse)
-@app.get("/portal", response_class=HTMLResponse)
-async def portal_page(request: Request):
-    """Serve the minimal guest auth portal."""
-    base_url = str(request.base_url).rstrip("/")
-    html_content = f"""<!DOCTYPE html>
+PORTAL_HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GraphCortex | Live Agent Memory & Reasoning Demo</title>
+  <title>GraphCortex | Autonomous Agent Memory & Graph Reasoning</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {{
-      --bg: #090d16;
-      --card-bg: #111827;
-      --card-border: #1f2937;
+    :root {
+      --bg: #070b14;
+      --card-bg: rgba(15, 23, 42, 0.75);
+      --card-border: rgba(51, 65, 85, 0.6);
+      --card-hover: rgba(30, 41, 59, 0.85);
       --primary: #3b82f6;
       --primary-hover: #2563eb;
+      --primary-glow: rgba(59, 130, 246, 0.25);
       --accent: #10b981;
-      --text: #f9fafb;
-      --text-muted: #9ca3af;
+      --accent-glow: rgba(16, 185, 129, 0.2);
+      --purple: #8b5cf6;
+      --purple-glow: rgba(139, 92, 246, 0.25);
+      --amber: #f59e0b;
+      --cyan: #06b6d4;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
       --code-bg: #030712;
-    }}
-    * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-    body {{
-      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
-      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg) 75%);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0f172a 35%, var(--bg) 85%);
       color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }}
-    .container {{
-      max-width: 680px;
+      padding: 2.5rem 1.25rem;
+      line-height: 1.5;
+    }
+    .main-wrapper {
+      max-width: 1060px;
       width: 100%;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 2.5rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    }}
-    .badge {{
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Header & Hero */
+    .hero {
+      text-align: center;
+      padding: 1.5rem 0 0.5rem;
+    }
+    .badge-pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(16, 185, 129, 0.1);
-      color: var(--accent);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      font-size: 0.75rem;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 0.8rem;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 6px 14px;
       border-radius: 9999px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       margin-bottom: 1.25rem;
-    }}
-    h1 {{ font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.02em; }}
-    p.subtitle {{ color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.75rem; }}
-    .form-group {{ margin-bottom: 1.25rem; }}
-    label {{ display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: #e5e7eb; }}
-    input[type="text"] {{
+      backdrop-filter: blur(8px);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    h1.hero-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #ffffff 30%, #93c5fd 70%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.85rem;
+    }
+    p.hero-desc {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 780px;
+      margin: 0 auto 1.5rem;
+      line-height: 1.6;
+    }
+
+    /* Core Card */
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+      transition: border-color 0.2s ease;
+    }
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    /* Explainer Cards Grid */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 850px) {
+      .grid-3 { grid-template-columns: 1fr; }
+      h1.hero-title { font-size: 2rem; }
+    }
+    .feature-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 1.35rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .card-guest::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .card-quota::before { background: linear-gradient(90deg, #8b5cf6, #c084fc); }
+    .card-privacy::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .feature-icon {
+      font-size: 1.6rem;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+    }
+    .feature-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: #ffffff;
+    }
+    .feature-text {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Auth Generator Section */
+    .auth-section {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.7) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      box-shadow: 0 0 35px -10px var(--primary-glow);
+    }
+    .input-row {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .input-group {
+      flex: 1;
+      min-width: 240px;
+    }
+    label.field-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #e2e8f0;
+    }
+    input[type="text"] {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 0.85rem 1.15rem;
       background: var(--code-bg);
       border: 1px solid var(--card-border);
-      border-radius: 8px;
+      border-radius: 10px;
       color: var(--text);
       font-size: 0.95rem;
+      font-family: inherit;
       outline: none;
-      transition: border-color 0.15s ease;
-    }}
-    input[type="text"]:focus {{ border-color: var(--primary); }}
-    button.btn-primary {{
-      width: 100%;
-      padding: 0.85rem 1.5rem;
-      background: var(--primary);
+      transition: all 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+    button.btn-generate {
+      padding: 0.85rem 1.75rem;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 0.95rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 8px;
-      transition: background 0.15s ease;
-    }}
-    button.btn-primary:hover {{ background: var(--primary-hover); }}
-    .result-box {{
+      transition: all 0.2s;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+    }
+    button.btn-generate:hover {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+    }
+    button.btn-generate:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Result & Tabs */
+    .result-section {
       margin-top: 1.75rem;
       padding-top: 1.75rem;
       border-top: 1px solid var(--card-border);
       display: none;
-    }}
-    .code-container {{
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 650px) {
+      .metrics-row { grid-template-columns: 1fr; }
+    }
+    .metric-pill {
+      background: rgba(3, 7, 18, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .metric-pill .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .metric-pill .title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+    .metric-pill .value { font-size: 1rem; font-weight: 700; color: #fff; }
+
+    /* Tabs */
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.5rem;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+    .tab-btn.active {
+      color: #60a5fa;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .code-box {
       position: relative;
       background: var(--code-bg);
       border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 0.75rem;
-    }}
-    pre {{
+      border-radius: 12px;
+      padding: 1.15rem;
+    }
+    pre code {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       color: #93c5fd;
+      line-height: 1.6;
       overflow-x: auto;
+      display: block;
       white-space: pre-wrap;
-    }}
-    .btn-copy {{
+    }
+    .btn-copy {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(255, 255, 255, 0.1);
+      top: 12px;
+      right: 12px;
+      background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
-      color: white;
+      color: #e2e8f0;
       font-size: 0.75rem;
-      padding: 4px 8px;
-      border-radius: 4px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
       cursor: pointer;
-    }}
-    .btn-copy:hover {{ background: rgba(255, 255, 255, 0.2); }}
-    .info-grid {{
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-copy:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    /* Architecture Visual Diagram */
+    .arch-diagram {
+      margin-top: 1rem;
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      overflow-x: auto;
+    }
+    .diagram-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.25rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .arch-flow {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 1rem;
+      min-width: 820px;
+    }
+    .arch-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .arch-node {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      border-radius: 10px;
+      padding: 1rem;
+      position: relative;
+    }
+    .node-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .node-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+    .arch-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      font-weight: 800;
+      font-size: 1.2rem;
+      padding: 0 0.25rem;
+    }
+    .arrow-label {
+      font-size: 0.68rem;
+      color: #64748b;
+      margin-top: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    /* Prompt Cards */
+    .prompts-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
+      gap: 1rem;
       margin-top: 1rem;
-    }}
-    .info-card {{
-      background: rgba(255, 255, 255, 0.03);
-      padding: 0.75rem;
+    }
+    @media (max-width: 768px) {
+      .prompts-grid { grid-template-columns: 1fr; }
+    }
+    .prompt-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .prompt-card:hover {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(30, 41, 59, 0.4);
+    }
+    .prompt-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+    .tag-memory { color: #34d399; }
+    .tag-recall { color: #60a5fa; }
+    .tag-impact { color: #f472b6; }
+    .tag-graph { color: #fbbf24; }
+    .prompt-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.4rem;
+    }
+    .prompt-text {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 0.85rem;
+      font-style: italic;
+    }
+    .btn-copy-prompt {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
       border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }}
-    .info-card .label {{ font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }}
-    .info-card .val {{ font-size: 0.9rem; font-weight: 600; color: #60a5fa; margin-top: 2px; }}
-    .footer {{ margin-top: 1.5rem; text-align: center; font-size: 0.8rem; color: var(--text-muted); }}
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-copy-prompt:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      padding: 1.5rem 0 1rem;
+      border-top: 1px solid rgba(51, 65, 85, 0.4);
+    }
+    .footer a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="badge">● Live FalkorDB MCP Playground</div>
-    <h1>GraphCortex</h1>
-    <p class="subtitle">
-      Connect your AI agent (Claude Desktop, Cursor, or Antigravity) directly to our live FalkorDB knowledge graph. Test cross-session autonomous memory, dependency blast radius, and grounded Q&A with zero vector embeddings.
-    </p>
+  <div class="main-wrapper">
 
-    <div class="form-group">
-      <label for="nickname">Your Nickname (No email or personal data required)</label>
-      <input type="text" id="nickname" placeholder="e.g. Alex" value="GuestDeveloper">
-    </div>
+    <!-- Hero Header -->
+    <header class="hero">
+      <div class="badge-pill">
+        <span class="status-dot"></span>
+        <span>GraphCortex MCP • Live FalkorDB Knowledge Graph</span>
+      </div>
+      <h1 class="hero-title">High-Performance Agent Memory & Reasoning</h1>
+      <p class="hero-desc">
+        A production Model Context Protocol (MCP) server powered by FalkorDB graph traversal and PostgreSQL guest sandboxes. Give Claude, Cursor, and custom AI agents real-time dependency reasoning, cross-session memory, and grounded architectural Q&A.
+      </p>
+    </header>
 
-    <button class="btn-primary" id="generateBtn" onclick="generateToken()">
-      <span>Generate 1-Click Agent Access Token</span>
-    </button>
-
-    <div class="result-box" id="resultBox">
-      <h3 style="font-size: 1rem; margin-bottom: 0.25rem;">Your Agent MCP Configuration</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted);">
-        Paste this into your <code>claude_desktop_config.json</code> or Antigravity MCP settings:
+    <!-- 1-Click Guest Access Card -->
+    <section class="glass-card auth-section">
+      <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.35rem;">⚡ Instant 1-Click Guest Sandbox</h2>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        No signup, no emails, no credit cards. Enter any nickname to provision an isolated, tenant-sandboxed graph workspace for your agent in milliseconds.
       </p>
 
-      <div class="code-container">
-        <button class="btn-copy" onclick="copyConfig()">Copy JSON</button>
-        <pre><code id="configJson"></code></pre>
+      <div class="input-row">
+        <div class="input-group">
+          <label class="field-label" for="nickname">Developer / Guest Nickname</label>
+          <input type="text" id="nickname" placeholder="e.g. Neo, Alex, Ada" value="GuestDeveloper">
+        </div>
+        <button class="btn-generate" id="generateBtn" onclick="generateToken()">
+          <span>⚡ Generate 1-Click Agent Token</span>
+        </button>
       </div>
 
-      <div class="info-grid">
-        <div class="info-card">
-          <div class="label">Session Quota</div>
-          <div class="val" id="quotaVal">10 Sessions</div>
+      <!-- Result View -->
+      <div class="result-section" id="resultBox">
+        <div class="metrics-row">
+          <div class="metric-pill">
+            <span class="dot" style="background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+            <div>
+              <div class="title">Active Token</div>
+              <div class="value" id="guestNameVal" style="font-size: 0.95rem; color: #34d399;">Ready</div>
+            </div>
+          </div>
+          <div class="metric-pill">
+            <span class="dot" style="background: #60a5fa; box-shadow: 0 0 8px #60a5fa;"></span>
+            <div>
+              <div class="title">Session Quota</div>
+              <div class="value" id="quotaVal">10 Sessions Available</div>
+            </div>
+          </div>
+          <div class="metric-pill">
+            <span class="dot" style="background: #c084fc; box-shadow: 0 0 8px #c084fc;"></span>
+            <div>
+              <div class="title">Sandbox Retention</div>
+              <div class="value" id="ttlVal">24 Hours (Auto-Purged)</div>
+            </div>
+          </div>
         </div>
-        <div class="info-card">
-          <div class="label">Sandbox Retention</div>
-          <div class="val" id="ttlVal">24 Hours (Auto-purged)</div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.05rem; font-weight: 700;">Client Configuration</h3>
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Select your AI environment:</span>
+        </div>
+
+        <div class="tab-nav">
+          <button class="tab-btn active" id="tabClaudeBtn" onclick="switchTab('claude')">Claude Desktop</button>
+          <button class="tab-btn" id="tabCursorBtn" onclick="switchTab('cursor')">Cursor IDE</button>
+          <button class="tab-btn" id="tabAntigravityBtn" onclick="switchTab('antigravity')">Antigravity / Generic MCP</button>
+        </div>
+
+        <div class="code-box">
+          <button class="btn-copy" onclick="copyConfig()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span id="copyBtnText">Copy Config</span>
+          </button>
+          <pre><code id="configJson"></code></pre>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div class="footer">
-    Protected by FalkorDB Graph Sandboxing • Rate limited to 3 tokens/hour per IP
+    <!-- Explainer 3-Card Grid: Guest Mode, Sessions, Quotas -->
+    <section class="grid-3">
+      <div class="feature-card card-guest">
+        <span class="feature-icon">🛡️</span>
+        <h3 class="feature-title">What is Guest Mode?</h3>
+        <p class="feature-text">
+          Zero-signup playground designed for instant agent testing. A cryptographic Bearer token creates a private tenant partition (<code>guest_&lt;id&gt;</code>) in FalkorDB. Your sessions, memories, and decisions are completely isolated and never visible to other users.
+        </p>
+      </div>
+
+      <div class="feature-card card-quota">
+        <span class="feature-icon">⏳</span>
+        <h3 class="feature-title">Sessions & Quotas</h3>
+        <p class="feature-text">
+          Each guest receives a quota of <strong>10 active agent conversation sessions</strong> with a <strong>24-hour retention window</strong>. Plenty of capacity to test memory persistence across restarts, blast radius impact analysis, and knowledge graph queries.
+        </p>
+      </div>
+
+      <div class="feature-card card-privacy">
+        <span class="feature-icon">⚡</span>
+        <h3 class="feature-title">How to Connect</h3>
+        <p class="feature-text">
+          Paste the generated config into Claude Desktop (<code>claude_desktop_config.json</code>) or Cursor settings. Our host Nginx streams tool calls via SSE (Server-Sent Events) with zero buffering and low millisecond response times.
+        </p>
+      </div>
+    </section>
+
+    <!-- Visual Architecture Diagram -->
+    <section class="glass-card">
+      <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.35rem;">🏗️ GraphCortex System Architecture</h2>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        How real-time AI agents interact with GraphCortex tri-core services over secure HTTPS SSE transport.
+      </p>
+
+      <div class="arch-diagram">
+        <div class="diagram-title">
+          <span>End-to-End Execution Flow</span>
+          <span style="color: #10b981;">HTTPS / WSS / SSE Active</span>
+        </div>
+        <div class="arch-flow">
+          
+          <!-- Column 1: AI Clients -->
+          <div class="arch-column">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #60a5fa; text-transform: uppercase;">1. AI Client Apps</div>
+            <div class="arch-node" style="border-left: 3px solid #3b82f6;">
+              <div class="node-header">🤖 Claude Desktop</div>
+              <div class="node-sub">Native MCP SSE client</div>
+            </div>
+            <div class="arch-node" style="border-left: 3px solid #8b5cf6;">
+              <div class="node-header">⚡ Cursor IDE</div>
+              <div class="node-sub">Developer tool agent</div>
+            </div>
+            <div class="arch-node" style="border-left: 3px solid #ec4899;">
+              <div class="node-header">🌌 Antigravity Agent</div>
+              <div class="node-sub">Autonomous coding subagents</div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow">
+            <span>➔</span>
+            <span class="arrow-label">Bearer Auth</span>
+          </div>
+
+          <!-- Column 2: Gateway & Auth -->
+          <div class="arch-column" style="flex: 1.1;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #a78bfa; text-transform: uppercase;">2. Gateway & Security</div>
+            <div class="arch-node" style="border-left: 3px solid #a855f7;">
+              <div class="node-header">🛡️ Host Nginx Reverse Proxy</div>
+              <div class="node-sub">TLS/SSL Termination<br><code>proxy_buffering off;</code><br>Long-lived SSE Keep-Alive</div>
+            </div>
+            <div class="arch-node" style="border-left: 3px solid #6366f1;">
+              <div class="node-header">🔑 Guest Auth Middleware</div>
+              <div class="node-sub">Bearer Token Validation<br>IP Rate Limiting (3/hr)<br>Tenant Context Binding</div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow">
+            <span>➔</span>
+            <span class="arrow-label">FastMCP SSE</span>
+          </div>
+
+          <!-- Column 3: GraphCortex Tri-Core -->
+          <div class="arch-column" style="flex: 1.3;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #34d399; text-transform: uppercase;">3. GraphCortex Engine</div>
+            <div class="arch-node" style="border-left: 3px solid #10b981;">
+              <div class="node-header">🧠 Memory Engine</div>
+              <div class="node-sub">Cross-session summaries, keyword extraction, and chronological timelines.</div>
+            </div>
+            <div class="arch-node" style="border-left: 3px solid #06b6d4;">
+              <div class="node-header">⚡ Reasoning Engine</div>
+              <div class="node-sub">Transitive dependency tree, blast radius impact analysis, path finding.</div>
+            </div>
+            <div class="arch-node" style="border-left: 3px solid #f59e0b;">
+              <div class="node-header">🏢 Enterprise Brain</div>
+              <div class="node-sub">Grounded Q&amp;A on services, teams, ADRs, and incidents without vector drift.</div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="arch-arrow">
+            <span>➔</span>
+            <span class="arrow-label">Cypher / SQL</span>
+          </div>
+
+          <!-- Column 4: Storage Engines -->
+          <div class="arch-column">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #f43f5e; text-transform: uppercase;">4. Datastores</div>
+            <div class="arch-node" style="border-left: 3px solid #ef4444;">
+              <div class="node-header">🚀 FalkorDB Graph</div>
+              <div class="node-sub">In-Memory Redis Cypher<br>Sandboxed Graph Nodes<br>&lt;15ms Graph Traversal</div>
+            </div>
+            <div class="arch-node" style="border-left: 3px solid #3b82f6;">
+              <div class="node-header">🐘 PostgreSQL Ledger</div>
+              <div class="node-sub">Guest Accounts &amp; Hashes<br>Session Usage Counting<br>Automatic 24h Purge</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Test Drive / Interactive Stories -->
+    <section class="glass-card">
+      <h2 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 0.35rem;">🚀 Test-Drive Scenarios</h2>
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Copy and paste these prompts directly into your AI assistant to verify cross-session memory and graph reasoning in action:
+      </p>
+
+      <div class="prompts-grid">
+        <div class="prompt-card">
+          <div>
+            <div class="prompt-tag tag-memory">Scenario 1 • Chat 1 (Write Memory)</div>
+            <div class="prompt-title">Store Architectural Decision</div>
+            <div class="prompt-text">
+              "We decided to migrate payments to gRPC with idempotency keys. Persist this session decision into GraphCortex user memory."
+            </div>
+          </div>
+          <button class="btn-copy-prompt" onclick="copyPrompt(this, 'We decided to migrate payments to gRPC with idempotency keys. Persist this session decision into GraphCortex user memory.')">Copy Prompt</button>
+        </div>
+
+        <div class="prompt-card">
+          <div>
+            <div class="prompt-tag tag-recall">Scenario 2 • Chat 2 (New Session Recall)</div>
+            <div class="prompt-title">Cross-Chat Autonomous Recall</div>
+            <div class="prompt-text">
+              "Start a brand new chat: What did we decide about our payment migration in our previous session? Query user memory."
+            </div>
+          </div>
+          <button class="btn-copy-prompt" onclick="copyPrompt(this, 'What did we decide about our payment migration in our previous session? Query user memory.')">Copy Prompt</button>
+        </div>
+
+        <div class="prompt-card">
+          <div>
+            <div class="prompt-tag tag-impact">Scenario 3 • Graph Reasoning</div>
+            <div class="prompt-title">Blast Radius Impact Analysis</div>
+            <div class="prompt-text">
+              "What is the blast radius if we modify the Order Processing service? Analyze transitive dependency impacts."
+            </div>
+          </div>
+          <button class="btn-copy-prompt" onclick="copyPrompt(this, 'What is the blast radius if we modify the Order Processing service? Analyze transitive dependency impacts.')">Copy Prompt</button>
+        </div>
+
+        <div class="prompt-card">
+          <div>
+            <div class="prompt-tag tag-graph">Scenario 4 • Grounded Q&amp;A</div>
+            <div class="prompt-title">Enterprise Architecture Query</div>
+            <div class="prompt-text">
+              "Find the shortest dependency path connecting Payment Service and Notification Service in our architecture."
+            </div>
+          </div>
+          <button class="btn-copy-prompt" onclick="copyPrompt(this, 'Find the shortest dependency path connecting Payment Service and Notification Service in our architecture.')">Copy Prompt</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      GraphCortex Engine • FalkorDB In-Memory Graph &amp; PostgreSQL Tenant Sandbox • Rate limited to 3 tokens/hour per IP
+    </footer>
+
   </div>
 
   <script>
-    async function generateToken() {{
+    let currentToken = '';
+    let currentTab = 'claude';
+    const baseUrl = '{{base_url}}';
+
+    function getConfigs(token) {
+      const sseUrl = baseUrl + '/sse';
+      return {
+        claude: {
+          "mcpServers": {
+            "graph-cortex": {
+              "url": sseUrl,
+              "headers": {
+                "Authorization": "Bearer " + token
+              }
+            }
+          }
+        },
+        cursor: {
+          "mcpServers": {
+            "graph-cortex": {
+              "url": sseUrl,
+              "headers": {
+                "Authorization": "Bearer " + token
+              }
+            }
+          }
+        },
+        antigravity: {
+          "server": "graph-cortex",
+          "transport": "sse",
+          "url": sseUrl,
+          "headers": {
+            "Authorization": "Bearer " + token
+          }
+        }
+      };
+    }
+
+    function renderConfig() {
+      if (!currentToken) return;
+      const configs = getConfigs(currentToken);
+      document.getElementById('configJson').innerText = JSON.stringify(configs[currentTab], null, 2);
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tabClaudeBtn').classList.toggle('active', tab === 'claude');
+      document.getElementById('tabCursorBtn').classList.toggle('active', tab === 'cursor');
+      document.getElementById('tabAntigravityBtn').classList.toggle('active', tab === 'antigravity');
+      renderConfig();
+    }
+
+    async function generateToken() {
       const btn = document.getElementById('generateBtn');
-      const nickname = document.getElementById('nickname').value || 'GuestDeveloper';
-      btn.innerText = 'Provisioning Sandbox...';
+      const nickname = document.getElementById('nickname').value.trim() || 'GuestDeveloper';
+      btn.innerHTML = '<span>⚡ Provisioning Sandbox...</span>';
       btn.disabled = true;
 
-      try {{
-        const res = await fetch('/api/guest', {{
+      try {
+        const res = await fetch('/api/guest', {
           method: 'POST',
-          headers: {{ 'Content-Type': 'application/json' }},
-          body: JSON.stringify({{ nickname: nickname }})
-        }});
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nickname: nickname })
+        });
 
         const data = await res.json();
-        if (!res.ok) {{
+        if (!res.ok) {
           alert(data.message || 'Error creating guest token');
-          btn.innerText = 'Generate 1-Click Agent Access Token';
+          btn.innerHTML = '<span>⚡ Generate 1-Click Agent Token</span>';
           btn.disabled = false;
           return;
-        }}
+        }
 
-        const config = {{
-          "mcpServers": {{
-            "graph-cortex": {{
-              "url": "{base_url}/sse",
-              "headers": {{
-                "Authorization": "Bearer " + data.token
-              }}
-            }}
-          }}
-        }};
-
-        document.getElementById('configJson').innerText = JSON.stringify(config, null, 2);
-        document.getElementById('quotaVal').innerText = data.session_quota + ' Sessions Left';
-        document.getElementById('ttlVal').innerText = 'Valid for ' + data.ttl_hours + ' Hours';
+        currentToken = data.token;
+        document.getElementById('guestNameVal').innerText = (data.nickname || nickname) + ' (Active)';
+        document.getElementById('quotaVal').innerText = data.session_quota + ' Sessions Available';
+        document.getElementById('ttlVal').innerText = data.ttl_hours + ' Hours (Auto-Purged)';
+        
+        renderConfig();
         document.getElementById('resultBox').style.display = 'block';
-        btn.innerText = 'Token Generated Successfully';
-      }} catch (err) {{
+        btn.innerHTML = '<span>✓ Token Provisioned</span>';
+        
+        // Smooth scroll to results
+        document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (err) {
         alert('Network error: ' + err);
-        btn.innerText = 'Generate 1-Click Agent Access Token';
+        btn.innerHTML = '<span>⚡ Generate 1-Click Agent Token</span>';
         btn.disabled = false;
-      }}
-    }}
+      }
+    }
 
-    function copyConfig() {{
+    function copyConfig() {
       const text = document.getElementById('configJson').innerText;
       navigator.clipboard.writeText(text);
-      alert('Copied MCP configuration JSON to clipboard!');
-    }}
+      const btnText = document.getElementById('copyBtnText');
+      btnText.innerText = 'Copied!';
+      setTimeout(() => { btnText.innerText = 'Copy Config'; }, 2000);
+    }
+
+    function copyPrompt(btn, text) {
+      navigator.clipboard.writeText(text);
+      const original = btn.innerText;
+      btn.innerText = 'Copied!';
+      btn.style.color = '#34d399';
+      setTimeout(() => {
+        btn.innerText = original;
+        btn.style.color = '';
+      }, 2000);
+    }
   </script>
 </body>
 </html>
 """
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/login", response_class=HTMLResponse)
+@app.get("/portal", response_class=HTMLResponse)
+async def portal_page(request: Request):
+    """Serve the interactive guest auth and architecture portal."""
+    base_url = str(request.base_url).rstrip("/")
+    html_content = PORTAL_HTML_TEMPLATE.replace("{{base_url}}", base_url)
     return HTMLResponse(content=html_content)
 
 
