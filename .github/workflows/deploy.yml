@@ -42,7 +42,7 @@ jobs:
           script: |
             set -e
             echo "[INFO] Navigating to application directory..."
-            cd /opt/graph-cortex
+            cd /opt/graph-cortex/graph-cortex
 
             echo "[INFO] Pulling latest changes from main..."
             git pull origin main
