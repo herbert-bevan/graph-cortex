@@ -427,15 +427,17 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
             user_name = validation.get("nickname", "unknown")
             token_reset = active_guest_context.set(guest_id)
 
-            # Record session activity
-            sess_id = request.headers.get("X-Session-ID") or request.query_params.get("session_id") or "sess_default"
-            try:
-                record_session_operation(guest_id, sess_id, path, ip_address=client_ip)
-            except Exception as e:
-                logger.warning(f"Failed to record session operation for guest={guest_id}: {e}")
+            # Record session activity only when a real transport session_id is present (e.g. on /messages/)
+            # This prevents /sse connect and /messages/ from being counted twice for a single MCP connection
+            sess_id = request.headers.get("X-Session-ID") or request.query_params.get("session_id")
+            if sess_id:
+                try:
+                    record_session_operation(guest_id, sess_id, path, ip_address=client_ip)
+                except Exception as e:
+                    logger.warning(f"Failed to record session operation for guest={guest_id}: {e}")
 
             logger.info(
-                f"MCP request authorized: guest_id='{guest_id}', user='{user_name}', path={path}, session_id='{sess_id}', ip={client_ip}, sessions_used={validation.get('sessions_used')}/{validation.get('session_quota')}"
+                f"MCP request authorized: guest_id='{guest_id}', user='{user_name}', path={path}, session_id='{sess_id or 'sse_stream'}', ip={client_ip}, sessions_used={validation.get('sessions_used')}/{validation.get('session_quota')}"
             )
 
             try:
