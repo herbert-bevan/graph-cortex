@@ -45,7 +45,7 @@ jobs:
             cd /opt/graph-cortex/graph-cortex
 
             echo "[INFO] Pulling latest changes from main..."
-            git pull origin main
+            git pull --rebase origin main
 
             echo "[INFO] Rebuilding and restarting containers..."
             docker compose up -d --build
