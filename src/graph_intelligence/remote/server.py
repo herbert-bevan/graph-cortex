@@ -35,6 +35,8 @@ from graph_intelligence.remote.auth import (
     record_session_operation,
     cleanup_expired_guests,
     init_db,
+    get_db_info,
+    _USE_POSTGRES,
 )
 from graph_intelligence.remote.cleanup import cleanup_stale_records_and_graphs
 
@@ -43,19 +45,23 @@ logger = get_logger("remote_server")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Automatic zero-touch database provisioning on server boot."""
+    """Automatic zero-touch database provisioning on server boot with dynamic diagnostics."""
+    db_info = get_db_info()
     try:
         init_db()
-        logger.info("GraphCortex PostgreSQL guest authentication tables verified.")
+        logger.info(f"GraphCortex Auth Database ready: engine='{db_info['engine']}', target='{db_info['target']}'")
     except Exception as exc:
-        logger.warning(f"PostgreSQL initialization note: {exc}")
+        logger.warning(f"Database initialization note ({db_info['target']}): {exc}")
 
+    settings = get_settings()
     try:
         store = GraphStore()
         store.ensure_indexes()
-        logger.info("GraphCortex FalkorDB schema indexes verified.")
+        logger.info(
+            f"GraphCortex FalkorDB indexes verified: host='{settings.FALKORDB_HOST}', port={settings.FALKORDB_PORT}, graph='{settings.FALKORDB_GRAPH}', ssl={settings.FALKORDB_SSL}"
+        )
     except Exception as exc:
-        logger.warning(f"FalkorDB initialization note: {exc}")
+        logger.warning(f"FalkorDB initialization note ({settings.FALKORDB_HOST}:{settings.FALKORDB_PORT}/{settings.FALKORDB_GRAPH}): {exc}")
 
     # Automated daily cleanup background worker (runs once a day)
     async def _daily_cleanup_worker():
@@ -125,6 +131,8 @@ def find_service_dependencies(
     max_depth: int = 2,
     limit: int = 25,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:find_service_dependencies] caller={caller}, service='{service}', direction='{direction}', max_depth={max_depth}")
     return _get_reasoning_svc().find_service_dependencies(
         service=service,
         direction=direction,
@@ -142,6 +150,8 @@ def analyze_change_impact(
     target_type: str = "Service",
     change_description: Optional[str] = None,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:analyze_change_impact] caller={caller}, target='{target}', target_type='{target_type}'")
     return _get_reasoning_svc().analyze_change_impact(
         target=target,
         target_type=target_type,
@@ -158,6 +168,8 @@ def find_graph_path(
     target: str,
     max_hops: int = 4,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:find_graph_path] caller={caller}, source='{source}', target='{target}', max_hops={max_hops}")
     return _get_reasoning_svc().find_graph_path(
         source=source,
         target=target,
@@ -174,6 +186,8 @@ def search_connected_entities(
     entity_types: Optional[List[str]] = None,
     limit: int = 10,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:search_connected_entities] caller={caller}, query='{query}'")
     return _get_reasoning_svc().search_connected_entities(
         query=query,
         entity_types=entity_types,
@@ -207,6 +221,8 @@ def remember_session_summary(
     decisions = [d[:200] for d in decisions[:8]]
     open_tasks = [t[:200] for t in open_tasks[:8]]
 
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:remember_session_summary] caller={caller}, title='{title}', project='{project}', tasks={len(open_tasks)}, decisions={len(decisions)}")
     return _get_memory_svc().remember_session_summary(
         title=title,
         summary=summary,
@@ -226,12 +242,15 @@ def remember_session_summary(
 )
 def search_user_memory(
     query: str,
+
     keywords: List[str] = [],
     entities: List[str] = [],
     project: Optional[str] = None,
     limit: int = 5,
     include_superseded: bool = False,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:search_user_memory] caller={caller}, query='{query}', project='{project}'")
     return _get_memory_svc().search_user_memory(
         query=query[:250],
         keywords=[k[:40] for k in keywords[:10]],
@@ -258,6 +277,8 @@ def update_user_memory(
     new_importance: Optional[str] = None,
     expected_version: Optional[int] = None,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:update_user_memory] caller={caller}, summary_id='{summary_id}', action='{action}'")
     return _get_memory_svc().update_user_memory(
         summary_id=summary_id,
         action=action,
@@ -280,6 +301,8 @@ def get_user_memory_timeline(
     project: Optional[str] = None,
     limit: int = 15,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:get_user_memory_timeline] caller={caller}, project='{project}'")
     return _get_memory_svc().get_user_memory_timeline(project=project, limit=min(limit, 20))
 
 
@@ -288,6 +311,8 @@ def get_user_memory_timeline(
     description="Get counts of active, superseded, and archived memories for the current user.",
 )
 def get_memory_status() -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:get_memory_status] caller={caller}")
     return _get_memory_svc().get_memory_status()
 
 
@@ -304,6 +329,8 @@ def search_company_knowledge(
     entity_types: Optional[List[str]] = None,
     limit: int = 10,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:search_company_knowledge] caller={caller}, query='{query}'")
     return _get_brain_svc().search_company_knowledge(query=query[:250], entity_types=entity_types, limit=limit)
 
 
@@ -312,6 +339,8 @@ def search_company_knowledge(
     description="Retrieve the complete architectural profile of a service: owners, team, dependencies, features, and ADRs.",
 )
 def get_service_brief(service: str) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:get_service_brief] caller={caller}, service='{service}'")
     return _get_brain_svc().get_service_brief(service=service)
 
 
@@ -320,6 +349,8 @@ def get_service_brief(service: str) -> Dict[str, Any]:
     description="Retrieve the rationale, status, and affected services for an Architecture Decision Record (ADR).",
 )
 def get_decision_context(decision: str) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:get_decision_context] caller={caller}, decision='{decision}'")
     return _get_brain_svc().get_decision_context(decision=decision)
 
 
@@ -331,6 +362,8 @@ def answer_company_question(
     question: str,
     project: Optional[str] = None,
 ) -> Dict[str, Any]:
+    caller = active_guest_context.get() or "demo_user"
+    logger.info(f"[TOOL:answer_company_question] caller={caller}, question='{question}', project='{project}'")
     return _get_brain_svc().answer_company_question(question=question[:300], project=project)
 
 
@@ -355,13 +388,16 @@ app.add_middleware(
 
 
 class GuestAuthMiddleware(BaseHTTPMiddleware):
-    """Inspects SSE requests, enforces Bearer token validation and logs sessions."""
+    """Inspects SSE requests, enforces Bearer token validation, logs IP, user, and sessions."""
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
         # Protect /sse and /messages routes
         if path.startswith("/sse") or path.startswith("/messages"):
+            forwarded = request.headers.get("x-forwarded-for")
+            client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+
             auth_header = request.headers.get("Authorization", "")
             raw_token = ""
             if auth_header.startswith("Bearer "):
@@ -370,6 +406,7 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
                 raw_token = request.query_params["token"].strip()
 
             if not raw_token:
+                logger.warning(f"MCP unauthorized request: missing Bearer token, path={path}, ip={client_ip}")
                 return JSONResponse(
                     {
                         "error": "unauthorized",
@@ -378,23 +415,28 @@ class GuestAuthMiddleware(BaseHTTPMiddleware):
                     status_code=401,
                 )
 
-            validation = validate_guest_token(raw_token)
+            validation = validate_guest_token(raw_token, ip_address=client_ip)
             if not validation.get("valid"):
                 reason = validation.get("reason", "invalid_token")
                 msg = validation.get("message", f"Authentication failed: {reason}")
+                logger.warning(f"MCP auth rejected: reason={reason}, path={path}, ip={client_ip}")
                 status_code = 403 if reason == "quota_exceeded" else 401
                 return JSONResponse({"error": reason, "message": msg}, status_code=status_code)
 
             guest_id = validation["guest_id"]
-            # Bind contextvar for downstream tool execution
+            user_name = validation.get("nickname", "unknown")
             token_reset = active_guest_context.set(guest_id)
 
             # Record session activity
             sess_id = request.headers.get("X-Session-ID") or request.query_params.get("session_id") or "sess_default"
             try:
-                record_session_operation(guest_id, sess_id, path)
+                record_session_operation(guest_id, sess_id, path, ip_address=client_ip)
             except Exception as e:
-                logger.warning(f"Failed to record session operation: {e}")
+                logger.warning(f"Failed to record session operation for guest={guest_id}: {e}")
+
+            logger.info(
+                f"MCP request authorized: guest_id='{guest_id}', user='{user_name}', path={path}, session_id='{sess_id}', ip={client_ip}, sessions_used={validation.get('sessions_used')}/{validation.get('session_quota')}"
+            )
 
             try:
                 response = await call_next(request)
@@ -1342,12 +1384,8 @@ async def portal_page(request: Request):
 @app.post("/api/guest")
 async def api_create_guest(request: Request):
     """Generate guest token with IP rate-limiting and global capacity checking."""
-    # Extract client IP
     forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        client_ip = forwarded.split(",")[0].strip()
-    else:
-        client_ip = request.client.host if request.client else "127.0.0.1"
+    client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "127.0.0.1")
 
     body = {}
     try:
@@ -1356,23 +1394,89 @@ async def api_create_guest(request: Request):
         pass
 
     nickname = body.get("nickname") or "GuestDeveloper"
+    logger.info(f"API /api/guest request received: nickname='{nickname}', ip={client_ip}")
     success, result = create_guest(nickname=nickname, ip_address=client_ip)
     if not success:
+        logger.warning(f"API /api/guest request rejected: nickname='{nickname}', ip={client_ip}, error={result.get('error')}")
         return JSONResponse(result, status_code=429 if result.get("error") == "rate_limit_exceeded" else 503)
 
+    logger.info(f"API /api/guest token issued: guest_id='{result.get('guest_id')}', user='{nickname}', ip={client_ip}")
     return JSONResponse(result)
 
 
 @app.get("/api/quota")
 async def api_check_quota(request: Request):
     """Check remaining session quota for the bearer token."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    client_ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "127.0.0.1")
+
     auth_header = request.headers.get("Authorization", "")
     token = auth_header[7:].strip() if auth_header.startswith("Bearer ") else ""
     if not token:
+        logger.warning(f"API /api/quota rejected: missing token, ip={client_ip}")
         return JSONResponse({"error": "missing_token"}, status_code=401)
 
-    validation = validate_guest_token(token)
+    validation = validate_guest_token(token, ip_address=client_ip)
+    logger.info(
+        f"API /api/quota checked: guest_id='{validation.get('guest_id')}', user='{validation.get('nickname')}', valid={validation.get('valid')}, quota_left={validation.get('sessions_left')}, ip={client_ip}"
+    )
     return JSONResponse(validation)
+
+
+@app.get("/api/status")
+async def api_status(request: Request):
+    """Live runtime diagnostics: database engine, target, guest counts, and FalkorDB status."""
+    from graph_intelligence.remote.auth import get_db_info, _get_connection
+    db_info = get_db_info()
+
+    guest_count = None
+    db_error = None
+    try:
+        conn = _get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM guest_users")
+        guest_count = cur.fetchone()[0]
+        conn.close()
+    except Exception as e:
+        db_error = str(e)
+
+    falkordb_status = "unknown"
+    node_count = None
+    falkordb_error = None
+    settings = get_settings()
+    try:
+        store = GraphStore()
+        if store.ping():
+            falkordb_status = "connected"
+            res = store.query("MATCH (n) RETURN COUNT(n) AS count")
+            if res and "count" in res[0]:
+                node_count = res[0]["count"]
+        else:
+            falkordb_status = "ping_failed"
+    except Exception as e:
+        falkordb_status = "error"
+        falkordb_error = str(e)
+
+    return JSONResponse({
+        "status": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "database": {
+            "engine": db_info["engine"],
+            "target": db_info["target"],
+            "use_postgres": db_info["use_postgres"],
+            "guest_count": guest_count,
+            "error": db_error,
+        },
+        "falkordb": {
+            "status": falkordb_status,
+            "host": settings.FALKORDB_HOST,
+            "port": settings.FALKORDB_PORT,
+            "graph": settings.FALKORDB_GRAPH,
+            "ssl": settings.FALKORDB_SSL,
+            "node_count": node_count,
+            "error": falkordb_error,
+        },
+    })
 
 
 @app.post("/api/admin/cleanup")

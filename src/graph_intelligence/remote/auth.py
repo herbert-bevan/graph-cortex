@@ -12,6 +12,11 @@ import hashlib
 import os
 import secrets
 from typing import Any, Dict, Optional, Tuple
+from urllib.parse import urlparse
+
+from graph_intelligence.common.logging_setup import get_logger
+
+logger = get_logger("guest_auth")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 MAX_CONCURRENT_GUESTS = int(os.getenv("MAX_CONCURRENT_GUESTS", "50"))
@@ -38,6 +43,35 @@ if not _USE_POSTGRES:
     SQLITE_DIR = os.getenv("SQLITE_DIR", os.path.dirname(__file__))
     os.makedirs(SQLITE_DIR, exist_ok=True)
     SQLITE_PATH = os.path.join(SQLITE_DIR, "guest_auth.db")
+else:
+    SQLITE_PATH = ""
+
+
+def get_db_info() -> Dict[str, Any]:
+    """Inspect and return runtime database connection info dynamically without hardcoding."""
+    if _USE_POSTGRES:
+        try:
+            p = urlparse(DATABASE_URL)
+            host = p.hostname or "unknown"
+            port = p.port or 5432
+            db_name = p.path.lstrip("/") or "unknown"
+            user = p.username or "postgres"
+            target = f"PostgreSQL ({user}@{host}:{port}/{db_name})"
+        except Exception:
+            target = "PostgreSQL (configured via DATABASE_URL)"
+        return {
+            "engine": "PostgreSQL",
+            "target": target,
+            "use_postgres": True,
+            "sqlite_path": None,
+        }
+    else:
+        return {
+            "engine": "SQLite",
+            "target": f"SQLite fallback ({SQLITE_PATH})",
+            "use_postgres": False,
+            "sqlite_path": SQLITE_PATH,
+        }
 
 
 def _get_connection():
@@ -53,6 +87,7 @@ def _get_connection():
 
 def init_db():
     """Initialize database tables if they do not exist."""
+    info = get_db_info()
     conn = _get_connection()
     try:
         cur = conn.cursor()
@@ -101,6 +136,10 @@ def init_db():
                 );
             """)
         conn.commit()
+        logger.info(f"Database schema verified: {info['target']}")
+    except Exception as exc:
+        logger.warning(f"Database schema verification error ({info['target']}): {exc}")
+        raise
     finally:
         conn.close()
 
@@ -118,6 +157,7 @@ def create_guest(nickname: str, ip_address: Optional[str] = None) -> Tuple[bool,
     cleaned_name = (nickname or "Guest").strip()[:32]
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(hours=GUEST_TTL_HOURS)
+    info = get_db_info()
 
     conn = _get_connection()
     try:
@@ -138,6 +178,9 @@ def create_guest(nickname: str, ip_address: Optional[str] = None) -> Tuple[bool,
                 )
             ip_count = cur.fetchone()[0]
             if ip_count >= 3:
+                logger.warning(
+                    f"Rate limit exceeded: IP '{ip_address}' attempted to create guest '{cleaned_name}' (count={ip_count}/3 per hour)"
+                )
                 return False, {
                     "error": "rate_limit_exceeded",
                     "message": "Rate limit exceeded: Maximum 3 guest tokens per hour per IP. Please use your existing token or try later."
@@ -156,6 +199,9 @@ def create_guest(nickname: str, ip_address: Optional[str] = None) -> Tuple[bool,
             )
         active_count = cur.fetchone()[0]
         if active_count >= MAX_CONCURRENT_GUESTS:
+            logger.warning(
+                f"Capacity full: active guests ({active_count}/{MAX_CONCURRENT_GUESTS}), IP '{ip_address}', guest '{cleaned_name}' rejected"
+            )
             return False, {
                 "error": "capacity_full",
                 "message": f"Demo capacity full ({active_count}/{MAX_CONCURRENT_GUESTS} active sessions). Please try again shortly."
@@ -180,6 +226,9 @@ def create_guest(nickname: str, ip_address: Optional[str] = None) -> Tuple[bool,
             """, (guest_id, cleaned_name, token_hash, GUEST_SESSION_LIMIT, ip_address, now.isoformat(), expires_at.isoformat()))
 
         conn.commit()
+        logger.info(
+            f"Guest created: guest_id='{guest_id}', nickname='{cleaned_name}', ip='{ip_address}', quota={GUEST_SESSION_LIMIT}, engine='{info['engine']}'"
+        )
         return True, {
             "guest_id": guest_id,
             "nickname": cleaned_name,
@@ -192,9 +241,10 @@ def create_guest(nickname: str, ip_address: Optional[str] = None) -> Tuple[bool,
         conn.close()
 
 
-def validate_guest_token(raw_token: str) -> Dict[str, Any]:
-    """Validate bearer token, check expiration and session quotas."""
+def validate_guest_token(raw_token: str, ip_address: Optional[str] = None) -> Dict[str, Any]:
+    """Validate bearer token, check expiration and session quotas with detailed logging."""
     if not raw_token:
+        logger.warning(f"Auth failed: missing token, ip='{ip_address}'")
         return {"valid": False, "reason": "missing_token"}
 
     token_hash = hash_token(raw_token)
@@ -218,6 +268,7 @@ def validate_guest_token(raw_token: str) -> Dict[str, Any]:
         
         row = cur.fetchone()
         if not row:
+            logger.warning(f"Auth failed: invalid token, ip='{ip_address}'")
             return {"valid": False, "reason": "invalid_token"}
 
         if _USE_POSTGRES:
@@ -231,12 +282,17 @@ def validate_guest_token(raw_token: str) -> Dict[str, Any]:
             revoked = bool(row["is_revoked"])
 
         if revoked:
+            logger.warning(f"Auth failed: token revoked for guest_id='{g_id}' ('{nickname}'), ip='{ip_address}'")
             return {"valid": False, "reason": "token_revoked"}
 
         if expires_at < now:
+            logger.warning(f"Auth failed: token expired at {expires_at.isoformat()} for guest_id='{g_id}' ('{nickname}'), ip='{ip_address}'")
             return {"valid": False, "reason": "token_expired"}
 
         if used >= quota:
+            logger.warning(
+                f"Auth failed: quota exceeded for guest_id='{g_id}' ('{nickname}'), used={used}/{quota}, ip='{ip_address}'"
+            )
             return {
                 "valid": False,
                 "reason": "quota_exceeded",
@@ -255,7 +311,7 @@ def validate_guest_token(raw_token: str) -> Dict[str, Any]:
         conn.close()
 
 
-def record_session_operation(guest_id: str, session_id: str, tool_name: str) -> None:
+def record_session_operation(guest_id: str, session_id: str, tool_name: str, ip_address: Optional[str] = None) -> None:
     """Record an operation and increment session count if it's a new session."""
     conn = _get_connection()
     try:
@@ -298,6 +354,15 @@ def record_session_operation(guest_id: str, session_id: str, tool_name: str) -> 
                 )
 
         conn.commit()
+
+        if seen_count == 0:
+            logger.info(
+                f"Session logged (NEW): guest_id='{guest_id}', session_id='{session_id}', path='{tool_name}', ip='{ip_address}'"
+            )
+        else:
+            logger.info(
+                f"Session activity (EXISTING): guest_id='{guest_id}', session_id='{session_id}', path='{tool_name}', ip='{ip_address}'"
+            )
     finally:
         conn.close()
 
@@ -314,6 +379,7 @@ def cleanup_expired_guests() -> int:
             cur.execute("DELETE FROM guest_users WHERE expires_at < ?", (now.isoformat(),))
         deleted = cur.rowcount if hasattr(cur, "rowcount") else 0
         conn.commit()
+        logger.info(f"Purged {deleted} expired guest accounts from database.")
         return deleted
     finally:
         conn.close()
