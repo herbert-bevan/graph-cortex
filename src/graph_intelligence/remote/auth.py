@@ -68,7 +68,7 @@ def get_db_info() -> Dict[str, Any]:
     else:
         return {
             "engine": "SQLite",
-            "target": f"SQLite fallback ({SQLITE_PATH})",
+            "target": "SQLite (guest_auth.db)",
             "use_postgres": False,
             "sqlite_path": SQLITE_PATH,
         }

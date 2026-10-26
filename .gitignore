@@ -10,5 +10,3 @@ htmlcov/
 *.db
 .vscode/
 .agent/plans/
-NOTES.md
-PROGRESS.md

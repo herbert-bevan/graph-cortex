@@ -173,7 +173,7 @@ def main():
         launch_inspector("graph_intelligence.reasoning.mcp_server")
         return
     elif args.server == "memory":
-        launch_inspector("graph_intelligence.memory.mcp_server", extra_env={"DEMO_USER_ID": "demo-user-herbert"})
+        launch_inspector("graph_intelligence.memory.mcp_server", extra_env={"DEMO_USER_ID": "demo-user-dev"})
         return
     elif args.server == "brain":
         launch_inspector("graph_intelligence.company_brain.mcp_server")
@@ -200,7 +200,7 @@ def main():
         if choice == "1":
             launch_inspector("graph_intelligence.reasoning.mcp_server")
         elif choice == "2":
-            launch_inspector("graph_intelligence.memory.mcp_server", extra_env={"DEMO_USER_ID": "demo-user-herbert"})
+            launch_inspector("graph_intelligence.memory.mcp_server", extra_env={"DEMO_USER_ID": "demo-user-dev"})
         elif choice == "3":
             launch_inspector("graph_intelligence.company_brain.mcp_server")
         elif choice == "4":

@@ -450,7 +450,7 @@ flowchart TD
     - Calls `store.ensure_indexes()` to establish all schema indexes first.
     - Idempotently merges all company nodes with properties (`name`, `source="seed"`, `created_at`).
     - Validates and creates all 53 semantic relationships.
-    - Pre-provisions demo user identities (`demo-user-herbert`, `demo-user-alice`) to enable immediate user-scoped memory testing.
+    - Pre-provisions demo user identities (`demo-user-dev`, `demo-user-alice`) to enable immediate user-scoped memory testing.
 - **Why Separate?**: Encapsulates the graph initialization routine, reusable by setup scripts, integration test fixtures, and CI/CD pipelines.
 
 ---
@@ -543,7 +543,7 @@ sequenceDiagram
 
   Agent->>MCP: Call remember_session_summary(title="...", summary="...", keywords=[...])
   Note over MCP: Server resolves user_id via TrustedIdentity.current()<br/>(user_id is NEVER supplied by client)
-  MCP->>Svc: remember_session_summary(user_id="demo-user-herbert", ...)
+  MCP->>Svc: remember_session_summary(user_id="demo-user-dev", ...)
   Svc->>Svc: scan_for_secrets(summary)
   Svc->>Svc: Compute SHA-256 content_hash
   Svc->>Store: query(FIND_ACTIVE_BY_HASH_QUERY)
@@ -557,7 +557,7 @@ sequenceDiagram
   Store->>DB: CREATE (t:Task {...}), MERGE (s)-[:HAS_TASK]->(t)
   
   Note over Svc,DB: READ-BACK VERIFICATION PHASE
-  Svc->>Store: query(READ_BACK_SUMMARY_QUERY, {id: new_id, user_id: "demo-user-herbert"})
+  Svc->>Store: query(READ_BACK_SUMMARY_QUERY, {id: new_id, user_id: "demo-user-dev"})
   Store->>DB: MATCH (s:SessionSummary {id: $id, user_id: $user_id})...
   DB-->>Store: Confirmed persisted node with linked entities & tasks
   Store-->>Svc: Persisted summary record
@@ -579,8 +579,8 @@ sequenceDiagram
   participant DB as FalkorDB Cloud
 
   Agent->>MCP: Call search_user_memory(query="What retry policy did we decide for payment?", keywords=["retry"])
-  MCP->>Svc: search_user_memory(user_id="demo-user-herbert", ...)
-  Svc->>Store: query(FETCH_USER_CANDIDATES_QUERY, {user_id: "demo-user-herbert", statuses: ['active']})
+  MCP->>Svc: search_user_memory(user_id="demo-user-dev", ...)
+  Svc->>Store: query(FETCH_USER_CANDIDATES_QUERY, {user_id: "demo-user-dev", statuses: ['active']})
   Store->>DB: MATCH (s:SessionSummary {user_id: $user_id}) WHERE s.status IN ['active']...
   DB-->>Store: 5 User Candidate Summaries
   Store-->>Svc: Candidate list

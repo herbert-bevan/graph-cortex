@@ -13,6 +13,7 @@ import contextvars
 from datetime import datetime, timezone
 import json
 import os
+import secrets
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, Request, Response
@@ -386,6 +387,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Centralized sanitization for unhandled internal exceptions."""
+    logger.error(f"Unhandled server exception on {request.method} {request.url.path}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "internal_error", "message": "An internal server error occurred."},
+    )
 
 
 class GuestAuthMiddleware(BaseHTTPMiddleware):
@@ -1439,67 +1450,90 @@ async def api_check_quota(request: Request):
     return JSONResponse(validation)
 
 
+ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY", "")
+
+
 @app.get("/api/status")
 async def api_status(request: Request):
-    """Live runtime diagnostics: database engine, target, guest counts, and FalkorDB status."""
-    from graph_intelligence.remote.auth import get_db_info, _get_connection
-    db_info = get_db_info()
+    """Health check endpoint responding with individual subsystem readiness statuses only."""
+    from graph_intelligence.remote.auth import _get_connection
 
-    guest_count = None
-    db_error = None
+    auth_db_status = "unknown"
     try:
         conn = _get_connection()
         cur = conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM guest_users")
-        guest_count = cur.fetchone()[0]
+        cur.execute("SELECT 1")
+        cur.fetchone()
         conn.close()
+        auth_db_status = "healthy"
     except Exception as e:
-        db_error = str(e)
+        logger.warning(f"Status check auth database failure: {e}")
+        auth_db_status = "unavailable"
 
-    falkordb_status = "unknown"
-    node_count = None
-    falkordb_error = None
-    settings = get_settings()
+    graph_store_status = "unknown"
     try:
         store = GraphStore()
         if store.ping():
-            falkordb_status = "connected"
-            res = store.query("MATCH (n) RETURN COUNT(n) AS count")
-            if res and "count" in res[0]:
-                node_count = res[0]["count"]
+            graph_store_status = "healthy"
         else:
-            falkordb_status = "ping_failed"
+            graph_store_status = "unavailable"
     except Exception as e:
-        falkordb_status = "error"
-        falkordb_error = str(e)
+        logger.warning(f"Status check graph store failure: {e}")
+        graph_store_status = "unavailable"
+
+    overall_status = "healthy" if (auth_db_status == "healthy" and graph_store_status == "healthy") else "degraded"
 
     return JSONResponse({
-        "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "database": {
-            "engine": db_info["engine"],
-            "target": db_info["target"],
-            "use_postgres": db_info["use_postgres"],
-            "guest_count": guest_count,
-            "error": db_error,
-        },
-        "falkordb": {
-            "status": falkordb_status,
-            "host": settings.FALKORDB_HOST,
-            "port": settings.FALKORDB_PORT,
-            "graph": settings.FALKORDB_GRAPH,
-            "ssl": settings.FALKORDB_SSL,
-            "node_count": node_count,
-            "error": falkordb_error,
+        "status": overall_status,
+        "services": {
+            "auth_database": auth_db_status,
+            "graph_store": graph_store_status,
         },
     })
 
 
 @app.post("/api/admin/cleanup")
 async def api_trigger_cleanup(request: Request, days: int = 2):
-    """Scheduled task endpoint to purge dead guest accounts, logs, and FalkorDB graph data older than `days` days."""
+    """Purge stale guest accounts, logs, and FalkorDB graph data older than `days` days.
+
+    Protected administrative endpoint. Requires Authorization: Bearer <ADMIN_SECRET_KEY> or X-Admin-Key.
+    """
+    if not ADMIN_SECRET_KEY:
+        logger.warning("Admin cleanup request rejected: ADMIN_SECRET_KEY is not configured on the server.")
+        return JSONResponse(
+            {"error": "forbidden", "message": "Admin cleanup endpoint is disabled."},
+            status_code=403,
+        )
+
+    auth_header = request.headers.get("Authorization", "")
+    admin_token = ""
+    if auth_header.startswith("Bearer "):
+        admin_token = auth_header[7:].strip()
+    elif "X-Admin-Key" in request.headers:
+        admin_token = request.headers["X-Admin-Key"].strip()
+
+    if not admin_token or not secrets.compare_digest(admin_token, ADMIN_SECRET_KEY):
+        client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
+        logger.warning(f"Unauthorized admin cleanup attempt from IP {client_ip}")
+        return JSONResponse(
+            {"error": "unauthorized", "message": "Invalid or missing administrative credentials."},
+            status_code=401,
+        )
+
+    if days < 1:
+        return JSONResponse(
+            {"error": "bad_request", "message": "'days' parameter must be an integer greater than or equal to 1."},
+            status_code=400,
+        )
+
     stats = cleanup_stale_records_and_graphs(days=days)
-    return JSONResponse({"ok": True, **stats})
+    return JSONResponse({
+        "ok": True,
+        "deleted_guest_count": stats.get("deleted_guest_count", 0),
+        "deleted_session_logs_count": stats.get("deleted_session_logs_count", 0),
+        "falkordb_cleaned_nodes": stats.get("falkordb_cleaned_nodes", 0),
+        "deleted_dead_graphs": stats.get("deleted_dead_graphs", []),
+    })
 
 
 # Mount FastMCP Transports:

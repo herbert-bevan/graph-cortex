@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     FALKORDB_SSL: bool = Field(default=False)
     FALKORDB_GRAPH: str = Field(default="graphcortex_demo")
     FALKORDB_GRAPH_TEST: str = Field(default="graphcortex_test")
-    DEMO_USER_ID: str = Field(default="demo-user-herbert")
+    DEMO_USER_ID: str = Field(default="demo-user-dev")
     DEFAULT_PROJECT_ID: str = Field(default="proj-payment-reliability")
     LOG_LEVEL: str = Field(default="INFO")
 

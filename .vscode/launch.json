@@ -42,7 +42,7 @@
       "request": "launch",
       "module": "graph_intelligence.memory.mcp_server",
       "env": {
-        "DEMO_USER_ID": "demo-user-herbert"
+        "DEMO_USER_ID": "demo-user-dev"
       },
       "console": "integratedTerminal",
       "justMyCode": true

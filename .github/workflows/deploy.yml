@@ -53,4 +53,3 @@ jobs:
             echo "[INFO] Verifying deployment health..."
             docker compose ps
             echo "[SUCCESS] Deployment completed successfully!"
-            echo "[SUCCESS] Deployment completed successfully!"

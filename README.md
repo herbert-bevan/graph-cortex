@@ -1,12 +1,16 @@
 # GraphCortex: Autonomous Knowledge Graph Memory & Reasoning Engine for AI Agents
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-graph--cortex.herbert.co.in-blue.svg)](https://graph-cortex.herbert.co.in)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-Cloud-orange.svg)](https://www.falkordb.com/)
 [![MCP](https://img.shields.io/badge/MCP-1.30-purple.svg)](https://modelcontextprotocol.io/)
-[![Tests](https://img.shields.io/badge/tests-33%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-37%20tests-brightgreen.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 An enterprise-grade Python platform delivering **three specialized Model Context Protocol (MCP) servers** over a single **FalkorDB knowledge graph** and a unified, secure domain core.
+
+> [!TIP]
+> **Live Demo & Interactive Playground**: Connect your agent immediately without local setup at **[https://graph-cortex.herbert.co.in](https://graph-cortex.herbert.co.in)**. Generate a 1-click sandboxed guest token and test architectural reasoning and autonomous memory directly in Google Antigravity, Claude Desktop, or Cursor!
 
 Built specifically for advanced agentic AI environments (such as **Google Antigravity**, Claude Desktop, and VS Code), this platform bridges the gap between static codebases, corporate knowledge bases, and long-term agent memory without relying on vector embeddings or opaque embeddings-based semantic search.
 
@@ -246,7 +250,7 @@ Implements user-scoped persistent session memory written and retrieved by the LL
 ```python
 {
     "id": "sum_a8f3b29c10de",
-    "user_id": "demo-user-herbert",
+    "user_id": "demo-user-dev",
     "session_id": "ses_49e17b8c2d5a",
     "title": "Three MCP Services Architecture with FalkorDB",
     "summary": "We decided to use three Python MCP services over a shared FalkorDB graph...",
@@ -424,9 +428,9 @@ tests/unit/test_validation.py::test_validate_int_range PASSED            [100%]
 ## 8. Live Demo Runbook & Prompt Storyboard
 
 To provide a 100% leak-free, authentic demo where the AI assistant cannot read code files from the local directory:
-1. Open the clean demo workspace created at **`c:\Users\HerbertThomas\Documents\HB\Projects\GraphCortex-Demo`**.
-2. It contains **only** [`.agent/rules/memory-policy.md`](file:///c:/Users/HerbertThomas/Documents/HB/Projects/GraphCortex-Demo/.agent/rules/memory-policy.md) and zero source files.
-3. The MCP servers communicate over stdio to FalkorDB Cloud.
+1. Open a clean demo workspace (e.g. `./demo-workspace`).
+2. It contains **only** [`.agent/rules/memory-policy.md`](.agent/rules/memory-policy.md) and zero source files.
+3. The MCP servers communicate over stdio locally, or remotely via the hosted playground at **[https://graph-cortex.herbert.co.in](https://graph-cortex.herbert.co.in)**.
 
 ### Step 1: Corporate Brain (graphcortex-brain)
 ```text
@@ -494,8 +498,8 @@ If you do not have a FalkorDB Cloud account or want to run everything locally wi
 
 #### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/herbert-bevan/falkordb-graph-intelligence.git
-cd falkordb-graph-intelligence
+git clone https://github.com/herbert-bevan/graph-cortex.git
+cd graph-cortex
 ```
 
 #### Step 2: Start Local FalkorDB via Docker
@@ -558,7 +562,7 @@ FALKORDB_GRAPH=graphcortex_demo
 FALKORDB_GRAPH_TEST=graphcortex_test
 
 # Agent & Demo Context
-DEMO_USER_ID=demo-user-herbert
+DEMO_USER_ID=demo-user-dev
 DEFAULT_PROJECT_ID=proj-payment-reliability
 LOG_LEVEL=INFO
 ```
@@ -632,7 +636,7 @@ To connect to a managed FalkorDB Cloud database:
    FALKORDB_SSL=false
    FALKORDB_GRAPH=graphcortex_demo
    FALKORDB_GRAPH_TEST=graphcortex_test
-   DEMO_USER_ID=demo-user-herbert
+   DEMO_USER_ID=demo-user-dev
    DEFAULT_PROJECT_ID=proj-payment-reliability
    LOG_LEVEL=INFO
    ```
@@ -723,10 +727,10 @@ npx @modelcontextprotocol/inspector .venv/bin/python -m graph_intelligence.reaso
 
 ```bash
 # Windows (PowerShell)
-npx.cmd @modelcontextprotocol/inspector -e DEMO_USER_ID=demo-user-herbert .\.venv\Scripts\python.exe -m graph_intelligence.memory.mcp_server
+npx.cmd @modelcontextprotocol/inspector -e DEMO_USER_ID=demo-user-dev .\.venv\Scripts\python.exe -m graph_intelligence.memory.mcp_server
 
 # Linux / macOS
-npx @modelcontextprotocol/inspector -e DEMO_USER_ID=demo-user-herbert .venv/bin/python -m graph_intelligence.memory.mcp_server
+npx @modelcontextprotocol/inspector -e DEMO_USER_ID=demo-user-dev .venv/bin/python -m graph_intelligence.memory.mcp_server
 ```
 
 ##### 3. Inspect Corporate Knowledge Brain: `graphcortex-brain`
@@ -791,13 +795,13 @@ npx @modelcontextprotocol/inspector --cli --method tools/call --tool-name find_s
 ##### 3. Execute a Memory Write via CLI
 ```bash
 # Windows (PowerShell)
-npx.cmd @modelcontextprotocol/inspector --cli -e DEMO_USER_ID=demo-user-herbert --method tools/call --tool-name remember_session_summary --tool-args-json '{\"title\":\"CLI_Summary\",\"summary\":\"Tested_persistence_via_inspector_CLI\",\"keywords\":[\"inspector\",\"test\",\"cli\"],\"entities\":[\"PaymentService\"]}' .\.venv\Scripts\python.exe -m graph_intelligence.memory.mcp_server
+npx.cmd @modelcontextprotocol/inspector --cli -e DEMO_USER_ID=demo-user-dev --method tools/call --tool-name remember_session_summary --tool-args-json '{\"title\":\"CLI_Summary\",\"summary\":\"Tested_persistence_via_inspector_CLI\",\"keywords\":[\"inspector\",\"test\",\"cli\"],\"entities\":[\"PaymentService\"]}' .\.venv\Scripts\python.exe -m graph_intelligence.memory.mcp_server
 ```
 
 ##### 4. Execute a Memory Search via CLI
 ```bash
 # Windows (PowerShell)
-npx.cmd @modelcontextprotocol/inspector --cli -e DEMO_USER_ID=demo-user-herbert --method tools/call --tool-name search_user_memory --tool-args-json '{\"query\":\"cli\",\"keywords\":[\"inspector\"]}' .\.venv\Scripts\python.exe -m graph_intelligence.memory.mcp_server
+npx.cmd @modelcontextprotocol/inspector --cli -e DEMO_USER_ID=demo-user-dev --method tools/call --tool-name search_user_memory --tool-args-json '{\"query\":\"cli\",\"keywords\":[\"inspector\"]}' .\.venv\Scripts\python.exe -m graph_intelligence.memory.mcp_server
 ```
 
 ---
@@ -820,7 +824,7 @@ Add the following to your Antigravity MCP configuration (`MCP Servers -> Manage 
       "command": "/absolute/path/to/falkordb-graph-intelligence/.venv/Scripts/python.exe",
       "args": ["-m", "graph_intelligence.memory.mcp_server"],
       "env": {
-        "DEMO_USER_ID": "demo-user-herbert"
+        "DEMO_USER_ID": "demo-user-dev"
       }
     },
     "graphcortex-brain": {
@@ -845,7 +849,7 @@ Add the following to your Antigravity MCP configuration (`MCP Servers -> Manage 
       "command": "python",
       "args": ["-m", "graph_intelligence.memory.mcp_server"],
       "cwd": "/path/to/falkordb-graph-intelligence",
-      "env": { "DEMO_USER_ID": "demo-user-herbert" }
+      "env": { "DEMO_USER_ID": "demo-user-dev" }
     },
     "graphcortex-brain": {
       "command": "python",
